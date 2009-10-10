@@ -25,7 +25,7 @@ class Repl(object):
 	def highlight_func(self, query_string):
 		if termstyle is None:
 			return lambda x: x
-		bits = query_string.split()
+		bits = query_string.replace('/',' ').split()
 		bits = [bit.lower() for bit in bits]
 		searches = [re.compile("(%s)" % (re.escape(bit),), re.I) for bit in bits]
 		def do_highlight(s):
