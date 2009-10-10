@@ -19,7 +19,7 @@ class FileFinder(object):
 				logging.debug("got line: %s" % (line,))
 				relpath, filename= os.path.split(line)
 				fullpath = os.path.join(self.basepath, relpath)
-				self.db.add_file(fullpath, filename)
+				self.db.add_file(relpath, filename)
 			self._poll()
 			
 		if sync:
