@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import logging
-from Repl import Repl
+from file_finder.Repl import Repl
 
 if __name__ == '__main__':
 	import sys

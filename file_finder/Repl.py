@@ -42,7 +42,7 @@ class Repl(object):
 		highlight = self.highlight_func(query_string)
 		for filename, fullpath in result_iter:
 			self.found_files.append(fullpath)
-			relpath = os.path.split(fullpath)[0][len(self.basepath)+1:]
+			relpath = os.path.split(fullpath)[0]
 			explanation = ''
 			if relpath:
 				explanation = "(in ./%s)" % (relpath,)

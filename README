@@ -13,17 +13,16 @@ Gedit Open Files is written in Python, so doesn't need compiling, however you wi
 need the following runtime dependencies:
 
   * Python 2.4 or later
-  * PyGTK 2.10 or later
   * sqlite3
+
+The following python packages are optional (but make things more awesome):
   * pyinotify
+  * termstyle
 
 Installation
 ------------
 
 sudo easy_install file-finder
-
-and for fancy highlighting:
-sudo easy_install termstyle
 
 Other
 -----
