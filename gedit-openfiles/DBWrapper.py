@@ -67,7 +67,7 @@ class DBWrapper(Thread):
 
     def select_on_filename(self, query_input):
         log.info("[DBWrapper] select_on_filename method")
-        query_param = query_input.replace(" ", "%")+"%"
+        query_param = "%%%s%%" % (query_input.replace(" ", "%"),)
         res = self.select("SELECT DISTINCT name, path FROM files " +
             "WHERE path LIKE ? ORDER BY path LIMIT 51", (query_param, ))
         for row in res:
