@@ -1,8 +1,10 @@
-Gedit Open Files - Gedit plugin to open files based on a query
+open files based on a query
 ================================================================
 
-This is a plugin for Gedit that adds support, to search and open files based 
-on the file browser root or a specifed root. 
+A simple console app that indexes and allows you to search for and open files.
+
+If you have inotify for python (linux only), it'll keep track of changes while it runs (so you don't need to re-index).
+If you have the python "termstyle" package installed, you'll get fancy coloured results, too!
 
 Dependencies
 ------------
@@ -18,13 +20,13 @@ need the following runtime dependencies:
 Installation
 ------------
 
-Copy all the files inside the plugin directory into ~/.gnome2/gedit/plugins
+sudo easy_install file-finder
 
-Features, Bugs Requests
------------------------
-Please post all request here http://geditopenfiles.uservoice.com/
+and for fancy highlighting:
+sudo easy_install termstyle
 
 Other
 -----
-gedit-openfiles is now included in gmate -- http://github.com/lexrupy/gmate/tree/master.
+
+The core code comes from vbabiy's gedit-openfiles - http://github.com/vbabiy/gedit-openfiles
 
