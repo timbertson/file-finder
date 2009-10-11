@@ -12,8 +12,8 @@ class FileFinder(object):
 		db.clear()
 
 	def populate(self, args=['ack', '-f'], sync=False):
-		proc = subprocess.Popen(args, stdout=subprocess.PIPE)
 		def _run():
+			proc = subprocess.Popen(args, stdout=subprocess.PIPE)
 			for line in proc.stdout:
 				line = line.rstrip('\n')
 				logging.debug("got line: %s" % (line,))
@@ -21,12 +21,21 @@ class FileFinder(object):
 				fullpath = os.path.join(self.basepath, relpath)
 				self.db.add_file(relpath, filename)
 			self._poll()
+
+		def _run_with_sigint():
+			try:
+				_run()
+			except (KeyboardInterrupt, EOFError):
+				import sys
+				sys.exit(0)
 			
 		if sync:
 			_run()
 		else:
 			from threading import Thread
-			Thread(target=_run).run()
+			worker = Thread(target=_run_with_sigint)
+			worker.daemon = True
+			worker.start()
 	
 	def _poll(self):
 		try:
