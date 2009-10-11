@@ -2,6 +2,7 @@ import os
 import re
 import subprocess
 import readline
+import optparse
 
 import logging
 
@@ -18,9 +19,31 @@ except ImportError:
 
 class Repl(object):
 	def __init__(self):
-		self.basepath = os.getcwd()
 		self.found_files = []
-		self.finder = FileFinder(self.basepath)
+	
+	def _configure(self):
+		usage = "finder [base_path]"
+		parser = optparse.OptionParser(usage)
+		parser.add_option('-f', '--find-cmd',
+			dest='find_cmd',
+			default="ack -f",
+			help="command to enumerate files (%default)")
+		parser.add_option('-v', '--verbose', dest='verbose',
+			action='store_true',
+			help='more information than you require')
+
+		(options, args) = parser.parse_args()
+		self.verbose = options.verbose
+		log_level = logging.DEBUG if options.verbose else logging.WARNING
+		logging.basicConfig(level=log_level)
+
+		self.find_cmd = options.find_cmd.split()
+		if len(args) == 1:
+			self.base_path = args[0]
+		elif len(args) == 0:
+			self.base_path = os.getcwd()
+		else:
+			parser.error("incorrect number of arguments")
 	
 	def highlight_func(self, query_string):
 		if termstyle is None:
@@ -76,8 +99,10 @@ class Repl(object):
 			self.summarise(results, q)
 
 	def run(self):
+		self._configure()
+		self.finder = FileFinder(self.base_path)
 		logging.info("getting file list...")
-		self.finder.populate()
+		self.finder.populate(find_cmd=self.find_cmd)
 		try:
 			while True:
 				self._loop()

@@ -11,9 +11,9 @@ class FileFinder(object):
 	def clear(self):
 		db.clear()
 
-	def populate(self, args=['ack', '-f'], sync=False):
+	def populate(self, find_cmd=['ack', '-f'], sync=False):
 		def _run():
-			proc = subprocess.Popen(args, stdout=subprocess.PIPE)
+			proc = subprocess.Popen(find_cmd + [self.basepath], stdout=subprocess.PIPE)
 			for line in proc.stdout:
 				line = line.rstrip('\n')
 				logging.debug("got line: %s" % (line,))
