@@ -41,7 +41,7 @@ class Repl(object):
 		if len(args) == 1:
 			self.base_path = args[0]
 		elif len(args) == 0:
-			self.base_path = os.getcwd()
+			self.base_path = '.'
 		else:
 			parser.error("incorrect number of arguments")
 	
@@ -69,7 +69,7 @@ class Repl(object):
 			relpath = os.path.split(fullpath)[0]
 			explanation = ''
 			if relpath:
-				explanation = "(in ./%s)" % (relpath,)
+				explanation = "(in %s)" % (relpath,)
 			index = str(i+1).rjust(2)
 			filename = filename.ljust(30)
 			print " %s%s   %s %s" % (green(index), black(":"), highlight(filename), black(explanation))
