@@ -11,7 +11,7 @@ class FileFinder(object):
 	def clear(self):
 		db.clear()
 
-	def populate(self, find_cmd=['ack', '-f'], sync=False):
+	def populate(self, find_cmd=['ack', '-f'], sync=False, watch=True):
 		def _run():
 			proc = subprocess.Popen(find_cmd + [self.basepath], stdout=subprocess.PIPE)
 			for line in proc.stdout:
@@ -20,7 +20,8 @@ class FileFinder(object):
 				relpath, filename= os.path.split(line)
 				fullpath = os.path.join(self.basepath, relpath)
 				self.db.add_file(relpath, filename)
-			self._poll()
+			if watch:
+				self._poll()
 
 		def _run_with_sigint():
 			try:

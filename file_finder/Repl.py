@@ -31,6 +31,9 @@ class Repl(object):
 		parser.add_option('-v', '--verbose', dest='verbose',
 			action='store_true',
 			help='more information than you require')
+		parser.add_option('-n', '--no-watch', dest='no_watch',
+			action='store_true',
+			help="disable inotify (folder watch) support")
 
 		(options, args) = parser.parse_args()
 		self.verbose = options.verbose
@@ -38,6 +41,7 @@ class Repl(object):
 		logging.basicConfig(level=log_level)
 
 		self.find_cmd = options.find_cmd.split()
+		self.use_inotify = not options.no_watch
 		if len(args) == 1:
 			self.base_path = args[0]
 		elif len(args) == 0:
@@ -102,7 +106,7 @@ class Repl(object):
 		self._configure()
 		self.finder = FileFinder(self.base_path)
 		logging.info("getting file list...")
-		self.finder.populate(find_cmd=self.find_cmd)
+		self.finder.populate(find_cmd=self.find_cmd, watch=self.use_inotify)
 		try:
 			while True:
 				self._loop()
