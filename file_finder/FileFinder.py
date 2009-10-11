@@ -13,13 +13,18 @@ class FileFinder(object):
 
 	def populate(self, find_cmd=['ack', '-f'], sync=False, watch=True):
 		def _run():
-			proc = subprocess.Popen(find_cmd + [self.basepath], stdout=subprocess.PIPE)
+			proc = subprocess.Popen(find_cmd + [self.basepath], stdout=subprocess.PIPE, stderr = subprocess.PIPE)
 			for line in proc.stdout:
 				line = line.rstrip('\n')
 				logging.debug("got line: %s" % (line,))
 				relpath, filename= os.path.split(line)
 				fullpath = os.path.join(self.basepath, relpath)
 				self.db.add_file(relpath, filename)
+			stdout, stderr = proc.communicate()
+			ret = proc.returncode
+			if ret not in (0,1):
+				logging.error("%s failed with error code %s: %s" % (' '.join(find_cmd), ret, stdout))
+				raise KeyboardInterrupt()
 			if watch:
 				self._poll()
 
