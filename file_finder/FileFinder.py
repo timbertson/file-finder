@@ -17,14 +17,15 @@ class FileFinder(object):
 
 	def populate(self, sync=False, watch=True):
 		def _run():
+			if watch and self._poll():
+				return
+
 			for dirpath, dirnames, filenames in os.walk(self.basepath):
 				self.path_filter.filter(dirnames, filenames)
 				for filename in filenames:
 					rel_dirpath = dirpath[len(self.basepath):]
 					self.db.add_file(rel_dirpath, filename)
-				
-			if watch:
-				self._poll()
+
 
 		def _run_with_sigint():
 			try:
@@ -46,13 +47,16 @@ class FileFinder(object):
 			from FileMonitor import FileMonitor
 		except ImportError:
 			logging.error("Can't import FileMonitor - directory updates will be ignored")
-			return
+			return False
 		class DummyConfig(object):
 			def get_value(self, *a):
 				return []
-		monitor = FileMonitor.FileMonitor(self.db, self.basepath, DummyConfig())
 		# monkey patch monitor to use our own filters
-		monitor.validate = self.path_filter.should_include
+		def wrapped_validate(instance, _path, is_file=False):
+			return self.path_filter.should_include(_path, is_file=is_file)
+		FileMonitor.validate = wrapped_validate
+		monitor = FileMonitor(self.db, self.basepath, DummyConfig())
+		return True
 
 	
 	def find(self, query):

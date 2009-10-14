@@ -113,4 +113,6 @@ class Repl(object):
 			while True:
 				self._loop()
 		except (KeyboardInterrupt, EOFError):
+			print
 			return 0
+
