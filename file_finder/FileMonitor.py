@@ -64,6 +64,8 @@ class FileMonitor(object):
 
     def add_file(self, path, name):
         if self.validate(name, is_file=True):
+            if path.startswith(self._root):
+                path = path[len(self._root)+1:]
             self._db_wrapper.add_file(path, name)
             self._file_count = self._file_count + 1
 
@@ -135,7 +137,7 @@ class WalkDirectoryThread(Thread):
                     # Check to see if it is a dir
                     if not os.path.isdir(os.path.join(path, name)):
                         self._file_monitor.add_file(path, name)
-        print "***** Total files %s *****" % (self._file_monitor._file_count, )
+        log.info("***** Total files %s *****" % (self._file_monitor._file_count, ))
 
     def _walk_file_system(self, root):
         """
