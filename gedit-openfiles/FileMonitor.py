@@ -151,13 +151,7 @@ class WalkDirectoryThread(Thread):
 
             if stat.S_ISDIR(file_stat.st_mode):
                 # Check to make sure the file not in the ignore list
-                ignore = False
-                for ignore_re in self._ignore_regexs:
-                    if ignore_re.match(name):
-                        log.debug("[WalkDirectoryThread] ### Ignored %s ####",
-                            name)
-                        ignore = True
-                        break
+                ignore = not self._file_monitor.validate(name, is_file=False)
                 if ignore:
                     continue
                 for (newroot, children) in self._walk_file_system(
