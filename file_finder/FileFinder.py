@@ -3,28 +3,26 @@ import subprocess
 import logging
 
 from DBWrapper import DBWrapper
+
 class FileFinder(object):
-	def __init__(self, basepath):
+	def __init__(self, basepath, path_filter):
 		self.db = DBWrapper()
+		if not basepath.endswith(os.path.sep):
+			basepath = basepath + os.path.sep
 		self.basepath = basepath
+		self.path_filter = path_filter
 	
 	def clear(self):
 		db.clear()
 
-	def populate(self, find_cmd=['ack', '-f'], sync=False, watch=True):
+	def populate(self, sync=False, watch=True):
 		def _run():
-			proc = subprocess.Popen(find_cmd + [self.basepath], stdout=subprocess.PIPE, stderr = subprocess.PIPE)
-			for line in proc.stdout:
-				line = line.rstrip('\n')
-				logging.debug("got line: %s" % (line,))
-				relpath, filename= os.path.split(line)
-				fullpath = os.path.join(self.basepath, relpath)
-				self.db.add_file(relpath, filename)
-			stdout, stderr = proc.communicate()
-			ret = proc.returncode
-			if ret not in (0,1):
-				logging.error("%s failed with error code %s: %s" % (' '.join(find_cmd), ret, stdout))
-				raise KeyboardInterrupt()
+			for dirpath, dirnames, filenames in os.walk(self.basepath):
+				self.path_filter.filter(dirnames, filenames)
+				for filename in filenames:
+					rel_dirpath = dirpath[len(self.basepath):]
+					self.db.add_file(rel_dirpath, filename)
+				
 			if watch:
 				self._poll()
 
@@ -52,7 +50,10 @@ class FileFinder(object):
 		class DummyConfig(object):
 			def get_value(self, *a):
 				return []
-		FileMonitor.FileMonitor(self.db, self.basepath, DummyConfig())
+		monitor = FileMonitor.FileMonitor(self.db, self.basepath, DummyConfig())
+		# monkey patch monitor to use our own filters
+		monitor.validate = self.path_filter.should_include
+
 	
 	def find(self, query):
 		return self.db.select_on_filename(query)

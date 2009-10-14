@@ -7,6 +7,7 @@ import optparse
 import logging
 
 from FileFinder import FileFinder
+from PathFilter import PathFilter
 
 try:
 	from termstyle import green, cyan, blue, yellow, black, auto
@@ -24,10 +25,10 @@ class Repl(object):
 	def _configure(self):
 		usage = "finder [base_path]"
 		parser = optparse.OptionParser(usage)
-		parser.add_option('-f', '--find-cmd',
-			dest='find_cmd',
-			default="ack -f",
-			help="command to enumerate files (%default)")
+		parser.add_option('-o', '--open-cmd',
+			dest='open_cmd',
+			default="gvim --remote-tab",
+			help="command to open files with (%default)")
 		parser.add_option('-v', '--verbose', dest='verbose',
 			action='store_true',
 			help='more information than you require')
@@ -40,8 +41,9 @@ class Repl(object):
 		log_level = logging.DEBUG if options.verbose else logging.WARNING
 		logging.basicConfig(level=log_level)
 
-		self.find_cmd = options.find_cmd.split()
+		self.open_cmd = options.open_cmd.split()
 		self.use_inotify = not options.no_watch
+		self.path_filter = PathFilter()
 		if len(args) == 1:
 			self.base_path = args[0]
 		elif len(args) == 0:
@@ -79,14 +81,14 @@ class Repl(object):
 			print " %s%s   %s %s" % (green(index), black(":"), highlight(filename), black(explanation))
 			i += 1
 		
-	def open(self, index, cmd=["gvim", "--remote"]):
+	def open(self, index):
 		index -= 1 # indexes start at 1 for readability
 		if len(self.found_files) <= index:
 			logging.warning("no such index: %s" % (index,))
 			return
 		filepath = self.found_files[index]
 		logging.info("opening file: %s" % (filepath,))
-		subprocess.Popen(cmd + [filepath])
+		subprocess.Popen(self.open_cmd + [filepath])
 
 	def _loop(self):
 		q = raw_input(yellow("\nfind/open file: "))
@@ -104,9 +106,9 @@ class Repl(object):
 
 	def run(self):
 		self._configure()
-		self.finder = FileFinder(self.base_path)
+		self.finder = FileFinder(self.base_path, self.path_filter)
 		logging.info("getting file list...")
-		self.finder.populate(find_cmd=self.find_cmd, watch=self.use_inotify)
+		self.finder.populate(watch=self.use_inotify)
 		try:
 			while True:
 				self._loop()

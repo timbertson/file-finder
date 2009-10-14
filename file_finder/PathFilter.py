@@ -4,18 +4,19 @@ DEFAULT_EXCLUDES = [
 	'.*',
 	'*.svn*',
 	'*.pyc',
+	'*.egg-info',
 ]
 
 class PathFilter(object):
 	def __init__(self):
-		self.exclude_paths = []
+		self.set_excludes(DEFAULT_EXCLUDES)
 		self.include_files = []
 	
 	def glob_to_regexp(self, glob):
 		parts = glob.split("*")
 		escaped_parts = map(re.escape, parts)
-		print '.*'.join(escaped_parts)
-		return re.compile(".*".join(escaped_parts))
+		regexp = "^%s$" % ('.*'.join(escaped_parts),)
+		return re.compile(regexp)
 
 	def set_excludes(self, exclude_list):
 		self.exclude_paths = map(self.glob_to_regexp, exclude_list)
@@ -29,7 +30,7 @@ class PathFilter(object):
 	def add_include(self, include):
 		self.include_files.append(self.glob_to_regexp(include))
 	
-	def include(self, path, is_file=False):
+	def should_include(self, path, is_file=False):
 		for exclude_re in self.exclude_paths:
 			if exclude_re.match(path):
 				return False
@@ -45,5 +46,11 @@ class PathFilter(object):
 	def filter(self, dirnames, filenames):
 		"""modify dirnames and filenames in-place to remove
 		  all filtered paths"""
-		pass
+		for dirname in dirnames[:]:
+			if not self.should_include(dirname, False):
+				dirnames.remove(dirname)
+
+		for filename in filenames[:]:
+			if not self.should_include(filename, True):
+				filenames.remove(filename)
 		
