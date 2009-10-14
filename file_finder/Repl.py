@@ -3,6 +3,7 @@ import re
 import subprocess
 import readline
 import optparse
+import threading
 
 import logging
 
@@ -17,6 +18,9 @@ except ImportError:
 	logging.info("can't import termstyle - install it for pretty colours")
 	termstyle = None
 	green = cyan = blue = yellow = black = lambda a: a
+
+
+QUITTING_TIME = threading.Event()
 
 class Repl(object):
 	def __init__(self):
@@ -105,8 +109,20 @@ class Repl(object):
 			self.summarise(results, q)
 
 	def run(self):
+		work_thread = threading.Thread(target=self._run)
+		work_thread.daemon = True
+		work_thread.start()
+		# the main thread is just going to wait till someone tells it to quit
+		try:
+			QUITTING_TIME.wait()
+		except KeyboardInterrupt:
+			# somehow the main thread fails to exit when it is the one
+			# to receive KeyboardInterrupt !
+			pass
+
+	def _run(self):
 		self._configure()
-		self.finder = FileFinder(self.base_path, self.path_filter)
+		self.finder = FileFinder(self.base_path, path_filter=self.path_filter, quit_indicator=QUITTING_TIME)
 		logging.info("getting file list...")
 		self.finder.populate(watch=self.use_inotify)
 		try:
@@ -115,4 +131,9 @@ class Repl(object):
 		except (KeyboardInterrupt, EOFError):
 			print
 			return 0
+		except Exception:
+			import traceback
+			traceback.print_exc()
+		finally:
+			QUITTING_TIME.set()
 

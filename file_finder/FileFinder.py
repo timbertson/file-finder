@@ -5,7 +5,8 @@ import logging
 from DBWrapper import DBWrapper
 
 class FileFinder(object):
-	def __init__(self, basepath, path_filter):
+	def __init__(self, basepath, path_filter, quit_indicator):
+		self.quit_indicator = quit_indicator
 		self.db = DBWrapper()
 		if not basepath.endswith(os.path.sep):
 			basepath = basepath + os.path.sep
@@ -30,9 +31,8 @@ class FileFinder(object):
 		def _run_with_sigint():
 			try:
 				_run()
-			except (KeyboardInterrupt, EOFError):
-				import sys
-				sys.exit(0)
+			except Exception:
+				self.quit_indicator.set()
 			
 		if sync:
 			_run()
