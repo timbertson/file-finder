@@ -12,26 +12,42 @@ START = object()
 PREVIOUS = -1
 NEXT = 1
 
+A_FILENAME = None
+A_PATH = None
+A_INPUT = None
+
 class CursesUI(object):
 	def run(self):
 		curses.wrapper(self._run)
 	
 	def _run(self, mainscr):
 		self.mainscr = mainscr
+		self._init_colors()
 		self._init_screens()
 		self._init_input()
 		self.update()
 		self._input_loop()
+	
+	def _init_colors(self):
+		global A_INPUT, A_FILENAME, A_PATH
+		curses.use_default_colors()
+		A_INPUT = curses.A_REVERSE
+
+		n_filename = 1
+		n_path = 2
+		curses.init_pair(n_filename, curses.COLOR_GREEN, -1)
+		curses.init_pair(n_path, curses.COLOR_BLACK, -1)
+
+		A_FILENAME = curses.color_pair(n_filename)
+		A_PATH = curses.color_pair(n_path)
 
 	def _init_screens(self):
-		curses.use_default_colors()
 		self.win_height, self.win_width = self.mainscr.getmaxyx()
 		self.input_win = curses.newwin(1, self.win_width, 0, 0)
 		self.results_win = curses.newpad(MAX_RESULTS, self.win_width)
 		self.status_win = curses.newwin(1, self.win_width, self.win_height-1, 0)
 		self.screens = (self.input_win, self.results_win, self.status_win)
 
-		self.input_win.bkgdset(' ', curses.A_REVERSE)
 	
 	def _init_input(self):
 		self.set_query("")
@@ -40,16 +56,34 @@ class CursesUI(object):
 		self.results_scroll = 0
 	
 	def update(self):
-		for scr in self.screens:
-			scr.clear()
-		self.input_win.addnstr(0,0, self.query, self.win_width)
+		self.draw_input()
+		self.draw_results()
 		self._redraw()
+	
+	def draw_input(self):
+		self.input_win.clear()
+		find_text = "Find: "
+
+		self.input_win.addnstr(0,0, find_text, self.win_width)
+		self.input_win.addnstr(0, len(find_text), self.query, self.win_width, A_INPUT)
+		
+	def draw_results(self):
+		linepos = 0
+		indent_width = 6
+		filename_len = min(int(self.win_width / 1.5), 30)
+		path_len = self.win_width - filename_len - 1 - indent_width
+
+		self.results_win.clear()
+		for file, path in self.results:
+			self.results_win.insnstr(linepos, indent_width, file, filename_len, A_FILENAME)
+			self.results_win.insnstr(linepos, indent_width + filename_len + 1, path, path_len, A_PATH)
+			linepos += 1
 	
 	def do_search(self):
 		self.set_results([
-			'result 1',
-			'result 2',
-			'result 3'])
+			('result 1', 'path 1'),
+			('result 2', ''),
+			('result 3', 'path 2')])
 	
 	def open_selected(self):
 		pass
@@ -59,9 +93,12 @@ class CursesUI(object):
 	
 	def set_query(self, new_query):
 		self.query = new_query
+		self.input_win.move(0, len(new_query))
+		self.input_win.cursyncup()
 		self.do_search()
 	
 	def set_results(self, results):
+		logging.debug("results: (%s)" % (len(results)))
 		self.results = list(results)
 
 	def add_char(self, ch):
@@ -90,7 +127,7 @@ class CursesUI(object):
 			logging.debug("input: %r (%s)" % (ch, ascii.unctrl(ch)))
 			if ascii.isprint(ch):
 				self.add_char(chr(ch))
-			elif ch == ascii.BS:
+			elif ch == ascii.BS or ch == 127: # 127 for me, who knows why...
 				logging.debug("backspace!")
 				self.remove_char()
 			elif ch == ascii.NL:
