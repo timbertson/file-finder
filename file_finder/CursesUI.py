@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 import curses
 from curses import ascii
+import threading
+from FileFinder import FileFinder
+from PathFilter import PathFilter
 
 import logging
 logging.basicConfig(level=logging.DEBUG, filename='/tmp/file-finder.log')
@@ -16,9 +19,27 @@ A_FILENAME = None
 A_PATH = None
 A_INPUT = None
 
+QUITTING_TIME = threading.Event()
+
 class CursesUI(object):
 	def run(self):
-		curses.wrapper(self._run)
+		def _doit():
+			self.base_path = '.'
+			self.path_filter = PathFilter()
+			self.finder = FileFinder(self.base_path, path_filter=self.path_filter, quit_indicator=QUITTING_TIME)
+			logging.info("getting file list...")
+			self.finder.populate(watch=False)
+			curses.wrapper(self._run)
+
+		work_thread = threading.Thread(target=_doit)
+		work_thread.start()
+		# the main thread is just going to wait till someone tells it to quit
+		try:
+			QUITTING_TIME.wait()
+		except KeyboardInterrupt:
+			# somehow the main thread fails to exit when it is the one
+			# to receive KeyboardInterrupt !
+			pass
 	
 	def _run(self, mainscr):
 		self.mainscr = mainscr
@@ -80,10 +101,10 @@ class CursesUI(object):
 			linepos += 1
 	
 	def do_search(self):
-		self.set_results([
-			('result 1', 'path 1'),
-			('result 2', ''),
-			('result 3', 'path 2')])
+		if len(self.query) == 0:
+			self.results = []
+			return
+		self.set_results(self.finder.find(self.query))
 	
 	def open_selected(self):
 		pass
@@ -98,7 +119,6 @@ class CursesUI(object):
 		self.do_search()
 	
 	def set_results(self, results):
-		logging.debug("results: (%s)" % (len(results)))
 		self.results = list(results)
 
 	def add_char(self, ch):
@@ -121,25 +141,38 @@ class CursesUI(object):
 				scr.noutrefresh()
 		curses.doupdate()
 	
-	def _input_loop(self):
-		while True:
-			ch = self.mainscr.getch()
-			logging.debug("input: %r (%s)" % (ch, ascii.unctrl(ch)))
-			if ascii.isprint(ch):
-				self.add_char(chr(ch))
-			elif ch == ascii.BS or ch == 127: # 127 for me, who knows why...
-				logging.debug("backspace!")
-				self.remove_char()
-			elif ch == ascii.NL:
-				self.open_selected()
-			elif ch == curses.KEY_UP:
-				self.select(PREVIOUS)
-			elif ch == curses.KEY_DOWN:
-				self.select(NEXT)
-			elif ch == ascii.ESC:
-				self.set_query("")
-			self.update()
+	def _input_iteration(self):
+		ch = self.mainscr.getch()
+		logging.debug("input: %r (%s)" % (ch, ascii.unctrl(ch)))
+		if ascii.isprint(ch):
+			self.add_char(chr(ch))
+		elif ch == ascii.BS or ch == 127: # 127 for me, who knows why...
+			logging.debug("backspace!")
+			self.remove_char()
+		elif ch == ascii.NL:
+			self.open_selected()
+		elif ch == curses.KEY_UP:
+			self.select(PREVIOUS)
+		elif ch == curses.KEY_DOWN:
+			self.select(NEXT)
+		elif ch == ascii.ESC:
+			self.set_query("")
+		self.update()
 
+
+	def _input_loop(self):
+		try:
+			while True:
+				if QUITTING_TIME.isSet():
+					break
+				self._input_iteration()
+		except (KeyboardInterrupt, EOFError):
+			logging.info("exiting...")
+		except Exception:
+			import traceback
+			logging.error(traceback.format_exc())
+		finally:
+			QUITTING_TIME.set()
 
 
 if __name__ == '__main__':

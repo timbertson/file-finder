@@ -32,6 +32,8 @@ class FileFinder(object):
 			try:
 				_run()
 			except Exception:
+				import traceback
+				logging.error("exception: %s" % (traceback.format_exc(),))
 				self.quit_indicator.set()
 			
 		if sync:
