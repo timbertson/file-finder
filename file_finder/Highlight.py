@@ -7,7 +7,7 @@ class Highlight(object):
 		bits = sorted(bits, key=len, reverse=True)
 		bits = [bit.lower() for bit in bits]
 		searches = ["(%s)" % (re.escape(bit),) for bit in bits]
-		self.highlight_re = re.compile("(%s)" % ('|'.join(searches),))
+		self.highlight_re = re.compile("(%s)" % ('|'.join(searches),), re.I)
 
 	def __call__(self, string):
 		last_end = 0

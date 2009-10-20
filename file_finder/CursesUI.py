@@ -4,6 +4,7 @@ from curses import ascii
 import threading
 from FileFinder import FileFinder
 from PathFilter import PathFilter
+from Highlight import Highlight
 
 import logging
 logging.basicConfig(level=logging.DEBUG, filename='/tmp/file-finder.log')
@@ -18,6 +19,7 @@ NEXT = 1
 A_FILENAME = None
 A_PATH = None
 A_INPUT = None
+A_HIGHLIGHT = None
 
 QUITTING_TIME = threading.Event()
 
@@ -50,17 +52,20 @@ class CursesUI(object):
 		self._input_loop()
 	
 	def _init_colors(self):
-		global A_INPUT, A_FILENAME, A_PATH
+		global A_INPUT, A_FILENAME, A_PATH, A_HIGHLIGHT
 		curses.use_default_colors()
 		A_INPUT = curses.A_REVERSE
 
 		n_filename = 1
 		n_path = 2
-		curses.init_pair(n_filename, curses.COLOR_GREEN, -1)
+		n_hi = 3
+		curses.init_pair(n_filename, curses.COLOR_WHITE, -1)
 		curses.init_pair(n_path, curses.COLOR_BLACK, -1)
+		curses.init_pair(n_hi, curses.COLOR_CYAN, -1)
 
 		A_FILENAME = curses.color_pair(n_filename)
 		A_PATH = curses.color_pair(n_path)
+		A_HIGHLIGHT = curses.color_pair(n_hi) | curses.A_BOLD
 
 	def _init_screens(self):
 		self.win_height, self.win_width = self.mainscr.getmaxyx()
@@ -96,7 +101,16 @@ class CursesUI(object):
 
 		self.results_win.clear()
 		for file, path in self.results:
-			self.results_win.insnstr(linepos, indent_width, file, filename_len, A_FILENAME)
+			drawn_chars = 0
+			remaining_chars = filename_len
+			for highlighted, segment in self.highlight(file):
+				attrs = A_FILENAME | A_HIGHLIGHT if highlighted else A_FILENAME
+				logging.debug("writing segment: %s (%s)" % (segment, 'HIGHLIGHTED' if highlighted else 'normal'))
+				self.results_win.insnstr(linepos, indent_width + drawn_chars, segment, remaining_chars, attrs)
+				drawn_chars += len(segment)
+				remaining_chars -= len(segment)
+				if remaining_chars <= 0:
+					break
 			self.results_win.insnstr(linepos, indent_width + filename_len + 1, path, path_len, A_PATH)
 			linepos += 1
 	
@@ -114,6 +128,7 @@ class CursesUI(object):
 	
 	def set_query(self, new_query):
 		self.query = new_query
+		self.highlight = Highlight(new_query)
 		self.input_win.move(0, len(new_query))
 		self.input_win.cursyncup()
 		self.do_search()
