@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import curses
 import os
+import sys
+import subprocess
 from curses import ascii
 import threading
 from FileFinder import FileFinder
@@ -8,7 +10,7 @@ from PathFilter import PathFilter
 from Highlight import Highlight
 
 import logging
-logging.basicConfig(level=logging.DEBUG, filename='/tmp/file-finder.log')
+logging.basicConfig(level=logging.INFO, filename='/tmp/file-finder.log')
 logging.info("start..")
 
 MAX_RESULTS = 50
@@ -43,7 +45,7 @@ class CursesUI(object):
 		except KeyboardInterrupt:
 			# somehow the main thread fails to exit when it is the one
 			# to receive KeyboardInterrupt !
-			pass
+			QUITTING_TIME.set()
 	
 	def _run(self, mainscr):
 		self.mainscr = mainscr
@@ -81,10 +83,10 @@ class CursesUI(object):
 
 	
 	def _init_input(self):
-		self.set_query("")
 		self.results = []
 		self.selected = 0
 		self.results_scroll = 0
+		self.set_query("")
 	
 	def update(self):
 		self.draw_input()
@@ -105,13 +107,17 @@ class CursesUI(object):
 		path_len = self.win_width - filename_len - 1 - indent_width
 
 		self.results_win.clear()
+		self.results_win.hline(0,0,'-',self.win_width)
+		drawpos = linepos + 1
 		for file, path in self.results:
+			attr_mod = curses.A_REVERSE if linepos == self.selected else curses.A_NORMAL
 			drawn_chars = 0
 			remaining_chars = filename_len
 			for highlighted, segment in self.highlight(file):
 				attrs = A_FILENAME | A_HIGHLIGHT if highlighted else A_FILENAME
 				logging.debug("writing segment: %s (%s)" % (segment, 'HIGHLIGHTED' if highlighted else 'normal'))
-				self.results_win.insnstr(linepos, indent_width + drawn_chars, segment, remaining_chars, attrs)
+
+				self.results_win.insnstr(drawpos, indent_width + drawn_chars, segment, remaining_chars, attrs | attr_mod)
 				drawn_chars += len(segment)
 				remaining_chars -= len(segment)
 				if remaining_chars <= 0:
@@ -122,22 +128,40 @@ class CursesUI(object):
 			explanation = ''
 			if relpath:
 				explanation = "(in %s)" % (relpath,)
-			self.results_win.insnstr(linepos, indent_width + filename_len + 1, explanation, path_len, A_PATH)
+			self.results_win.insnstr(drawpos, indent_width + filename_len + 1, explanation, path_len, A_PATH)
 			linepos += 1
+			drawpos = linepos + 1
+			if drawpos >= MAX_RESULTS:
+				break
 		if linepos == 0 and len(self.query) > 0:
-			self.results_win.insnstr(linepos, indent_width, 'No Matches...', self.win_width - indent_width, A_ERR)
+			self.results_win.insnstr(drawpos, indent_width, 'No Matches...', self.win_width - indent_width, A_ERR)
 	
 	def do_search(self):
+		self.select(START)
 		if len(self.query) == 0:
 			self.results = []
 			return
 		self.set_results(self.finder.find(self.query))
 	
 	def open_selected(self):
-		pass
+		index = self.selected
+		if len(self.results) <= index:
+			logging.warning("no such index: %s" % (index,))
+			return
+		filepath = self.results[index][-1]
+		logging.info("opening file: %s" % (filepath,))
+		self.open_cmd = ["open"]
+		subprocess.Popen(self.open_cmd + [filepath])
 	
 	def select(self, amount):
-		pass
+		if amount == NEXT or amount == PREVIOUS:
+			self.selected += amount
+		elif amount == START:
+			self.selected = 0
+		elif amount == END:
+			self.selected = len(self.results)-1
+		self.selected = max(self.selected, 0)
+		self.selected = min(self.selected, len(self.results)-1)
 	
 	def set_query(self, new_query):
 		self.query = new_query
@@ -190,17 +214,21 @@ class CursesUI(object):
 
 	def _input_loop(self):
 		try:
+			logging.info("input loop begins")
 			while True:
 				if QUITTING_TIME.isSet():
 					break
 				self._input_iteration()
 		except (KeyboardInterrupt, EOFError):
 			logging.info("exiting...")
+			import traceback
+			logging.info('\n'.join(traceback.format_stack()))
 		except Exception:
 			import traceback
 			logging.error(traceback.format_exc())
 		finally:
 			QUITTING_TIME.set()
+			sys.exit(0)
 
 
 if __name__ == '__main__':
