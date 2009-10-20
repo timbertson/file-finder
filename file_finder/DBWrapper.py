@@ -30,9 +30,9 @@ class DBWrapper(Thread):
             if not self._queue.empty():
                 try:
                     sql, params, result = self._queue.get()
-                    log.info("[DBWrapper] QUERY: %s" % sql)
-                    log.info("[DBWrapper] PARAMS: %s" % str(params))
-                    log.info("[DBWrapper] RESULT: " + str(result))
+                    log.debug("[DBWrapper] QUERY: %s" % sql)
+                    log.debug("[DBWrapper] PARAMS: %s" % str(params))
+                    log.debug("[DBWrapper] RESULT: " + str(result))
                     cursor = self._db.cursor()
                     if params:
                         cursor.execute(sql, params)
@@ -42,7 +42,7 @@ class DBWrapper(Thread):
                     log.error("[DBWrapper] OperationalError : %s" % e)
 
                 if result:
-                    log.info("[DBWrapper] Putting Results")
+                    log.debug("[DBWrapper] Putting Results")
                     for row in cursor.fetchall():
                         result.put(row)
                     result.put("__END__")
@@ -62,11 +62,11 @@ class DBWrapper(Thread):
             if row == '__END__':
                 break
             list_result.append(row)
-        log.info("[DBWrapper] SELECT RESULT COUNT: " + str(len(list_result)))
+        log.debug("[DBWrapper] SELECT RESULT COUNT: " + str(len(list_result)))
         return list_result
 
     def select_on_filename(self, query_input):
-        log.info("[DBWrapper] select_on_filename method")
+        log.debug("[DBWrapper] select_on_filename method")
         if '/' in query_input:
           query_type = 'path'
           query_input = query_input.replace('/', ' ')
