@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import curses
+import os
 from curses import ascii
 import threading
 from FileFinder import FileFinder
@@ -20,6 +21,7 @@ A_FILENAME = None
 A_PATH = None
 A_INPUT = None
 A_HIGHLIGHT = None
+A_ERR = None
 
 QUITTING_TIME = threading.Event()
 
@@ -52,20 +54,23 @@ class CursesUI(object):
 		self._input_loop()
 	
 	def _init_colors(self):
-		global A_INPUT, A_FILENAME, A_PATH, A_HIGHLIGHT
+		global A_INPUT, A_FILENAME, A_PATH, A_HIGHLIGHT, A_ERR
 		curses.use_default_colors()
 		A_INPUT = curses.A_REVERSE
 
 		n_filename = 1
 		n_path = 2
 		n_hi = 3
+		n_err = 4
 		curses.init_pair(n_filename, curses.COLOR_WHITE, -1)
 		curses.init_pair(n_path, curses.COLOR_BLACK, -1)
 		curses.init_pair(n_hi, curses.COLOR_CYAN, -1)
+		curses.init_pair(n_err, curses.COLOR_WHITE, curses.COLOR_RED)
 
 		A_FILENAME = curses.color_pair(n_filename)
 		A_PATH = curses.color_pair(n_path)
 		A_HIGHLIGHT = curses.color_pair(n_hi) | curses.A_BOLD
+		A_ERR = curses.color_pair(n_err) | curses.A_BOLD
 
 	def _init_screens(self):
 		self.win_height, self.win_width = self.mainscr.getmaxyx()
@@ -90,7 +95,7 @@ class CursesUI(object):
 		self.input_win.clear()
 		find_text = "Find: "
 
-		self.input_win.addnstr(0,0, find_text, self.win_width)
+		self.input_win.addnstr(0,0, find_text, self.win_width, A_PATH)
 		self.input_win.addnstr(0, len(find_text), self.query, self.win_width, A_INPUT)
 		
 	def draw_results(self):
@@ -111,8 +116,16 @@ class CursesUI(object):
 				remaining_chars -= len(segment)
 				if remaining_chars <= 0:
 					break
-			self.results_win.insnstr(linepos, indent_width + filename_len + 1, path, path_len, A_PATH)
+			
+			# now draw the path
+			relpath = os.path.split(path)[0]
+			explanation = ''
+			if relpath:
+				explanation = "(in %s)" % (relpath,)
+			self.results_win.insnstr(linepos, indent_width + filename_len + 1, explanation, path_len, A_PATH)
 			linepos += 1
+		if linepos == 0 and len(self.query) > 0:
+			self.results_win.insnstr(linepos, indent_width, 'No Matches...', self.win_width - indent_width, A_ERR)
 	
 	def do_search(self):
 		if len(self.query) == 0:
@@ -161,7 +174,7 @@ class CursesUI(object):
 		logging.debug("input: %r (%s)" % (ch, ascii.unctrl(ch)))
 		if ascii.isprint(ch):
 			self.add_char(chr(ch))
-		elif ch == ascii.BS or ch == 127: # 127 for me, who knows why...
+		elif ch == ascii.BS or ch == ascii.DEL:
 			logging.debug("backspace!")
 			self.remove_char()
 		elif ch == ascii.NL:
