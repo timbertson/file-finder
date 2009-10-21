@@ -5,6 +5,8 @@ import sys
 import subprocess
 from curses import ascii
 import threading
+from Queue import Queue, Empty
+
 from FileFinder import FileFinder
 from PathFilter import PathFilter
 from Highlight import Highlight
@@ -30,6 +32,9 @@ class CursesUI(object):
 	def __init__(self, options):
 		self.opt = options
 		self.status = "   ctrl-d to exit"
+		self.ui_lock = threading.Lock()
+		self.query_queue = Queue()
+		self.results_queue = Queue()
 
 	def run(self):
 		logging.basicConfig(level=self.opt.log_level, filename='/tmp/file-finder.log')
@@ -50,12 +55,42 @@ class CursesUI(object):
 			# to receive KeyboardInterrupt !
 			QUITTING_TIME.set()
 	
+	def search_loop(self):
+		while True:
+			query = self.query_queue.get()
+			try:
+				query = self.query_queue.get(timeout=0.1)
+			except Empty: pass
+			logging.info("searching: %r" % (query))
+			if query:
+				results = self.finder.find(query)
+			else:
+				results = []
+			self.results_queue.put((query, results))
+	
+	def display_loop(self):
+		while True:
+			query, results = self.results_queue.get()
+			self.ui_lock.acquire()
+			self.set_results(results, query)
+			self.update()
+			self.ui_lock.release()
+
 	def _run(self, mainscr):
 		self.mainscr = mainscr
 		self._init_colors()
 		self._init_screens()
 		self._init_input()
 		self.update()
+
+		display_thread = threading.Thread(target=self.display_loop)
+		search_thread = threading.Thread(target=self.search_loop)
+		display_thread.daemon = True
+		search_thread.daemon = True
+
+		display_thread.start()
+		search_thread.start()
+
 		self._input_loop()
 	
 	def _init_colors(self):
@@ -125,8 +160,6 @@ class CursesUI(object):
 			remaining_chars = filename_len
 			for highlighted, segment in self.highlight(file):
 				attrs = A_FILENAME | A_HIGHLIGHT if highlighted else A_FILENAME
-				logging.debug("writing segment: %s (%s)" % (segment, 'HIGHLIGHTED' if highlighted else 'normal'))
-
 				self.results_win.insnstr(linepos, indent_width + drawn_chars, segment, remaining_chars, attrs | attr_mod)
 				drawn_chars += len(segment)
 				remaining_chars -= len(segment)
@@ -149,13 +182,6 @@ class CursesUI(object):
 		self.status_win.clear()
 		self.status_win.insnstr(0, 0, self.status, self.win_width, A_PATH)
 	
-	def do_search(self):
-		self.select(START)
-		if len(self.query) == 0:
-			self.results = []
-			return
-		self.set_results(self.finder.find(self.query))
-	
 	def open_selected(self):
 		index = self.selected
 		if len(self.results) <= index:
@@ -166,6 +192,7 @@ class CursesUI(object):
 		subprocess.Popen(self.opt.open_cmd + [filepath])
 	
 	def select(self, amount):
+		self.ui_lock.acquire()
 		if amount == NEXT or amount == PREVIOUS:
 			self.selected += amount
 		elif amount == START:
@@ -174,15 +201,18 @@ class CursesUI(object):
 			self.selected = len(self.results)-1
 		self.selected = min(self.selected, len(self.results)-1)
 		self.selected = max(self.selected, 0)
+		self.ui_lock.release()
 	
 	def set_query(self, new_query):
+		self.query_queue.put(new_query)
+		self.ui_lock.acquire()
 		self.query = new_query
-		self.highlight = Highlight(new_query)
-		self.input_win.move(0, len(new_query))
-		self.input_win.cursyncup()
-		self.do_search()
+		self.ui_lock.release()
 	
-	def set_results(self, results):
+	def set_results(self, results, query):
+		self.highlight = Highlight(query)
+		self.input_win.move(0, len(query))
+		self.input_win.cursyncup()
 		self.results = list(results)
 		self.selected = 0
 
@@ -209,7 +239,6 @@ class CursesUI(object):
 	def _input_iteration(self):
 		ch = self.mainscr.getch()
 		if QUITTING_TIME.isSet(): return False
-
 		logging.debug("input: %r (%s)" % (ch, ascii.unctrl(ch)))
 		if ascii.isprint(ch):
 			self.add_char(chr(ch))
@@ -227,7 +256,9 @@ class CursesUI(object):
 			self.resize()
 		elif ch == ascii.EOT: # ctrl-D
 			return False
+		self.ui_lock.acquire()
 		self.update()
+		self.ui_lock.release()
 		return True
 
 
@@ -242,9 +273,4 @@ class CursesUI(object):
 			logging.error(traceback.format_exc())
 		finally:
 			QUITTING_TIME.set()
-
-
-if __name__ == '__main__':
-	CursesUI().run()
-	
 
