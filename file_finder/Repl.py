@@ -9,6 +9,8 @@ import logging
 
 from FileFinder import FileFinder
 from PathFilter import PathFilter
+from Options import Options
+from Highlight import Highlight
 
 try:
 	from termstyle import green, cyan, blue, yellow, black, auto
@@ -23,50 +25,15 @@ except ImportError:
 QUITTING_TIME = threading.Event()
 
 class Repl(object):
-	def __init__(self):
+	def __init__(self, options):
 		self.found_files = []
-	
-	def _configure(self):
-		usage = "finder [base_path]"
-		parser = optparse.OptionParser(usage)
-		parser.add_option('-o', '--open-cmd',
-			dest='open_cmd',
-			default="gvim --remote-tab",
-			help="command to open files with (%default)")
-		parser.add_option('-v', '--verbose', dest='verbose',
-			action='store_true',
-			help='more information than you require')
-		parser.add_option('-n', '--no-watch', dest='no_watch',
-			action='store_true',
-			help="disable inotify (folder watch) support")
-
-		(options, args) = parser.parse_args()
-		self.verbose = options.verbose
-		log_level = logging.DEBUG if options.verbose else logging.WARNING
-		logging.basicConfig(level=log_level)
-
-		self.open_cmd = options.open_cmd.split()
-		self.use_inotify = not options.no_watch
-		self.path_filter = PathFilter()
-		if len(args) == 1:
-			self.base_path = args[0]
-		elif len(args) == 0:
-			self.base_path = '.'
-		else:
-			parser.error("incorrect number of arguments")
+		self.opt = options
 	
 	def highlight_func(self, query_string):
 		if termstyle is None:
 			return lambda x: x
-		bits = query_string.replace('/',' ').split()
-		bits = sorted(bits, key=len, reverse=True)
-		bits = [bit.lower() for bit in bits]
-		searches = [re.compile("(%s)" % (re.escape(bit),), re.I) for bit in bits]
-		def do_highlight(s):
-			for search in searches:
-				s = search.sub(cyan('\\1'), s)
-			return s
-		return do_highlight
+		highlight = Highlight(query_string)
+		return lambda x: highlight(x, curses.cyan)
 			
 	def summarise(self, result_iter, query_string):
 		subprocess.call(['clear'])
@@ -92,7 +59,7 @@ class Repl(object):
 			return
 		filepath = self.found_files[index]
 		logging.info("opening file: %s" % (filepath,))
-		subprocess.Popen(self.open_cmd + [filepath])
+		subprocess.Popen(self.opt.open_cmd + [filepath])
 
 	def _loop(self):
 		q = raw_input(yellow("\nfind/open file: "))
@@ -121,10 +88,9 @@ class Repl(object):
 			pass
 
 	def _run(self):
-		self._configure()
-		self.finder = FileFinder(self.base_path, path_filter=self.path_filter, quit_indicator=QUITTING_TIME)
+		self.finder = FileFinder(self.opt.base_path, path_filter=self.opt.path_filter, quit_indicator=QUITTING_TIME)
 		logging.info("getting file list...")
-		self.finder.populate(watch=self.use_inotify)
+		self.finder.populate(watch=self.opt.use_inotify)
 		try:
 			while True:
 				self._loop()

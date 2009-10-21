@@ -28,11 +28,12 @@ A_ERR = None
 QUITTING_TIME = threading.Event()
 
 class CursesUI(object):
+	def __init__(self, options):
+		self.opt = options
+
 	def run(self):
 		def _doit():
-			self.base_path = '.'
-			self.path_filter = PathFilter()
-			self.finder = FileFinder(self.base_path, path_filter=self.path_filter, quit_indicator=QUITTING_TIME)
+			self.finder = FileFinder(self.opt.base_path, path_filter=self.opt.path_filter, quit_indicator=QUITTING_TIME)
 			logging.info("getting file list...")
 			self.finder.populate(watch=False)
 			curses.wrapper(self._run)
