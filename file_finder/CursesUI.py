@@ -161,8 +161,8 @@ class CursesUI(object):
 			self.selected = 0
 		elif amount == END:
 			self.selected = len(self.results)-1
-		self.selected = max(self.selected, 0)
 		self.selected = min(self.selected, len(self.results)-1)
+		self.selected = max(self.selected, 0)
 	
 	def set_query(self, new_query):
 		self.query = new_query
@@ -173,6 +173,7 @@ class CursesUI(object):
 	
 	def set_results(self, results):
 		self.results = list(results)
+		self.selected = 0
 
 	def add_char(self, ch):
 		self.set_query(self.query + ch)
@@ -195,7 +196,13 @@ class CursesUI(object):
 		curses.doupdate()
 	
 	def _input_iteration(self):
-		ch = self.mainscr.getch()
+		curses.halfdelay(5)
+		ch = None
+		while True:
+			ch = self.mainscr.getch()
+			if QUITTING_TIME.isSet(): return False
+			if ch != -1: break
+
 		logging.debug("input: %r (%s)" % (ch, ascii.unctrl(ch)))
 		if ascii.isprint(ch):
 			self.add_char(chr(ch))
@@ -211,25 +218,21 @@ class CursesUI(object):
 		elif ch == ascii.ESC:
 			self.set_query("")
 		self.update()
+		return True
 
 
 	def _input_loop(self):
 		try:
 			logging.info("input loop begins")
-			while True:
-				if QUITTING_TIME.isSet():
-					break
-				self._input_iteration()
+			while self._input_iteration(): pass
 		except (KeyboardInterrupt, EOFError):
 			logging.info("exiting...")
-			import traceback
-			logging.info('\n'.join(traceback.format_stack()))
 		except Exception:
 			import traceback
 			logging.error(traceback.format_exc())
 		finally:
+			#TODO: this seems to block indefinitely
 			QUITTING_TIME.set()
-			sys.exit(0)
 
 
 if __name__ == '__main__':
