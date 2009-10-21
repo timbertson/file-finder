@@ -22,12 +22,14 @@ A_PATH = None
 A_INPUT = None
 A_HIGHLIGHT = None
 A_ERR = None
+A_PROMPT = None
 
 QUITTING_TIME = threading.Event()
 
 class CursesUI(object):
 	def __init__(self, options):
 		self.opt = options
+		self.status = "   ctrl-d to exit"
 
 	def run(self):
 		logging.basicConfig(level=self.opt.log_level, filename='/tmp/file-finder.log')
@@ -57,7 +59,7 @@ class CursesUI(object):
 		self._input_loop()
 	
 	def _init_colors(self):
-		global A_INPUT, A_FILENAME, A_PATH, A_HIGHLIGHT, A_ERR
+		global A_INPUT, A_FILENAME, A_PATH, A_HIGHLIGHT, A_ERR, A_PROMPT
 		curses.use_default_colors()
 		A_INPUT = curses.A_REVERSE
 
@@ -65,15 +67,18 @@ class CursesUI(object):
 		n_path = 2
 		n_hi = 3
 		n_err = 4
+		n_prompt = 5
 		curses.init_pair(n_filename, curses.COLOR_WHITE, -1)
-		curses.init_pair(n_path, curses.COLOR_BLUE, -1)
+		curses.init_pair(n_path, curses.COLOR_BLACK, -1)
 		curses.init_pair(n_hi, curses.COLOR_GREEN, -1)
 		curses.init_pair(n_err, curses.COLOR_WHITE, curses.COLOR_RED)
+		curses.init_pair(n_prompt, curses.COLOR_BLUE, -1)
 
 		A_FILENAME = curses.color_pair(n_filename)
 		A_PATH = curses.color_pair(n_path)
 		A_HIGHLIGHT = curses.color_pair(n_hi) | curses.A_BOLD
 		A_ERR = curses.color_pair(n_err) | curses.A_BOLD
+		A_PROMPT = curses.color_pair(n_prompt)
 
 	def _init_screens(self):
 		self.win_height, self.win_width = self.mainscr.getmaxyx()
@@ -82,7 +87,6 @@ class CursesUI(object):
 		self.status_win = curses.newwin(1, self.win_width, self.win_height-1, 0)
 		self.screens = (self.input_win, self.results_win, self.status_win)
 
-	
 	def _init_input(self):
 		self.results = []
 		self.selected = 0
@@ -92,13 +96,14 @@ class CursesUI(object):
 	def update(self):
 		self.draw_input()
 		self.draw_results()
+		self.draw_status()
 		self._redraw()
 	
 	def draw_input(self):
 		self.input_win.clear()
 		find_text = "Find: "
 
-		self.input_win.addnstr(0,0, find_text, self.win_width, A_PATH)
+		self.input_win.addnstr(0,0, find_text, self.win_width, A_PROMPT)
 		self.input_win.addnstr(0, len(find_text), self.query, self.win_width, A_INPUT)
 		self.input_win.bkgdset(' ', curses.A_REVERSE)
 		
@@ -134,6 +139,10 @@ class CursesUI(object):
 				break
 		if linepos == 0 and len(self.query) > 0:
 			self.results_win.insnstr(linepos, indent_width, 'No Matches...', self.win_width - indent_width, A_ERR)
+	
+	def draw_status(self):
+		self.status_win.clear()
+		self.status_win.insnstr(0, 0, self.status, self.win_width, A_PATH)
 	
 	def do_search(self):
 		self.select(START)
