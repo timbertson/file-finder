@@ -101,7 +101,6 @@ class CursesUI(object):
 		self.input_win.addnstr(0,0, find_text, self.win_width, A_PATH)
 		self.input_win.addnstr(0, len(find_text), self.query, self.win_width, A_INPUT)
 		self.input_win.bkgdset(' ', curses.A_REVERSE)
-		#self.input_win.hline(1,0,'-',self.win_width)
 		
 	def draw_results(self):
 		linepos = 0
@@ -150,8 +149,7 @@ class CursesUI(object):
 			return
 		filepath = self.results[index][-1]
 		logging.info("opening file: %s" % (filepath,))
-		self.open_cmd = ["open"]
-		subprocess.Popen(self.open_cmd + [filepath])
+		subprocess.Popen(self.opt.open_cmd + [filepath])
 	
 	def select(self, amount):
 		if amount == NEXT or amount == PREVIOUS:
@@ -195,18 +193,14 @@ class CursesUI(object):
 		curses.doupdate()
 	
 	def _input_iteration(self):
-		curses.halfdelay(5)
-		ch = None
-		while True:
-			ch = self.mainscr.getch()
-			if QUITTING_TIME.isSet(): return False
-			if ch != -1: break
+		ch = self.mainscr.getch()
+		if QUITTING_TIME.isSet(): return False
 
+		logging.info(repr(threading.enumerate()))
 		logging.debug("input: %r (%s)" % (ch, ascii.unctrl(ch)))
 		if ascii.isprint(ch):
 			self.add_char(chr(ch))
 		elif ch == ascii.BS or ch == ascii.DEL:
-			logging.debug("backspace!")
 			self.remove_char()
 		elif ch == ascii.NL:
 			self.open_selected()
@@ -216,6 +210,8 @@ class CursesUI(object):
 			self.select(NEXT)
 		elif ch == ascii.ESC:
 			self.set_query("")
+		elif ch == ascii.EOT: # ctrl-D
+			return False
 		self.update()
 		return True
 
@@ -230,7 +226,6 @@ class CursesUI(object):
 			import traceback
 			logging.error(traceback.format_exc())
 		finally:
-			#TODO: this seems to block indefinitely
 			QUITTING_TIME.set()
 
 
