@@ -10,8 +10,6 @@ from PathFilter import PathFilter
 from Highlight import Highlight
 
 import logging
-logging.basicConfig(level=logging.INFO, filename='/tmp/file-finder.log')
-logging.info("start..")
 
 MAX_RESULTS = 50
 END = object()
@@ -32,6 +30,8 @@ class CursesUI(object):
 		self.opt = options
 
 	def run(self):
+		logging.basicConfig(level=self.opt.log_level, filename='/tmp/file-finder.log')
+		logging.info("start..")
 		def _doit():
 			self.finder = FileFinder(self.opt.base_path, path_filter=self.opt.path_filter, quit_indicator=QUITTING_TIME)
 			logging.info("getting file list...")
@@ -66,8 +66,8 @@ class CursesUI(object):
 		n_hi = 3
 		n_err = 4
 		curses.init_pair(n_filename, curses.COLOR_WHITE, -1)
-		curses.init_pair(n_path, curses.COLOR_BLACK, -1)
-		curses.init_pair(n_hi, curses.COLOR_CYAN, -1)
+		curses.init_pair(n_path, curses.COLOR_BLUE, -1)
+		curses.init_pair(n_hi, curses.COLOR_GREEN, -1)
 		curses.init_pair(n_err, curses.COLOR_WHITE, curses.COLOR_RED)
 
 		A_FILENAME = curses.color_pair(n_filename)
@@ -100,6 +100,8 @@ class CursesUI(object):
 
 		self.input_win.addnstr(0,0, find_text, self.win_width, A_PATH)
 		self.input_win.addnstr(0, len(find_text), self.query, self.win_width, A_INPUT)
+		self.input_win.bkgdset(' ', curses.A_REVERSE)
+		#self.input_win.hline(1,0,'-',self.win_width)
 		
 	def draw_results(self):
 		linepos = 0
@@ -108,8 +110,6 @@ class CursesUI(object):
 		path_len = self.win_width - filename_len - 1 - indent_width
 
 		self.results_win.clear()
-		self.results_win.hline(0,0,'-',self.win_width)
-		drawpos = linepos + 1
 		for file, path in self.results:
 			attr_mod = curses.A_REVERSE if linepos == self.selected else curses.A_NORMAL
 			drawn_chars = 0
@@ -118,7 +118,7 @@ class CursesUI(object):
 				attrs = A_FILENAME | A_HIGHLIGHT if highlighted else A_FILENAME
 				logging.debug("writing segment: %s (%s)" % (segment, 'HIGHLIGHTED' if highlighted else 'normal'))
 
-				self.results_win.insnstr(drawpos, indent_width + drawn_chars, segment, remaining_chars, attrs | attr_mod)
+				self.results_win.insnstr(linepos, indent_width + drawn_chars, segment, remaining_chars, attrs | attr_mod)
 				drawn_chars += len(segment)
 				remaining_chars -= len(segment)
 				if remaining_chars <= 0:
@@ -129,13 +129,12 @@ class CursesUI(object):
 			explanation = ''
 			if relpath:
 				explanation = "(in %s)" % (relpath,)
-			self.results_win.insnstr(drawpos, indent_width + filename_len + 1, explanation, path_len, A_PATH)
+			self.results_win.insnstr(linepos, indent_width + filename_len + 1, explanation, path_len, A_PATH)
 			linepos += 1
-			drawpos = linepos + 1
-			if drawpos >= MAX_RESULTS:
+			if linepos >= MAX_RESULTS:
 				break
 		if linepos == 0 and len(self.query) > 0:
-			self.results_win.insnstr(drawpos, indent_width, 'No Matches...', self.win_width - indent_width, A_ERR)
+			self.results_win.insnstr(linepos, indent_width, 'No Matches...', self.win_width - indent_width, A_ERR)
 	
 	def do_search(self):
 		self.select(START)

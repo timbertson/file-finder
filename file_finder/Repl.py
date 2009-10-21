@@ -33,7 +33,7 @@ class Repl(object):
 		if termstyle is None:
 			return lambda x: x
 		highlight = Highlight(query_string)
-		return lambda x: highlight(x, curses.cyan)
+		return lambda x: highlight.replace(x, green)
 			
 	def summarise(self, result_iter, query_string):
 		subprocess.call(['clear'])
@@ -49,7 +49,7 @@ class Repl(object):
 				explanation = "(in %s)" % (relpath,)
 			index = str(i+1).rjust(2)
 			filename = filename.ljust(30)
-			print " %s%s   %s %s" % (green(index), black(":"), highlight(filename), black(explanation))
+			print " %s%s   %s %s" % (yellow(index), black(":"), highlight(filename), black(explanation))
 			i += 1
 		
 	def open(self, index):
@@ -62,7 +62,7 @@ class Repl(object):
 		subprocess.Popen(self.opt.open_cmd + [filepath])
 
 	def _loop(self):
-		q = raw_input(yellow("\nfind/open file: "))
+		q = raw_input(blue("\nfind/open file: "))
 		if len(q) == 0:
 			q = 1 # open the first found file by default
 		try:
@@ -76,6 +76,7 @@ class Repl(object):
 			self.summarise(results, q)
 
 	def run(self):
+		logging.basicConfig(level=self.opt.log_level)
 		work_thread = threading.Thread(target=self._run)
 		work_thread.daemon = True
 		work_thread.start()
