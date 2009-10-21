@@ -86,6 +86,10 @@ class CursesUI(object):
 		self.results_win = curses.newpad(MAX_RESULTS, self.win_width)
 		self.status_win = curses.newwin(1, self.win_width, self.win_height-1, 0)
 		self.screens = (self.input_win, self.results_win, self.status_win)
+	
+	def resize(self):
+		self._init_screens()
+		self.update()
 
 	def _init_input(self):
 		self.results = []
@@ -108,6 +112,7 @@ class CursesUI(object):
 		self.input_win.bkgdset(' ', curses.A_REVERSE)
 		
 	def draw_results(self):
+		#TODO: scroll results buffer
 		linepos = 0
 		indent_width = 6
 		filename_len = min(int(self.win_width / 1.5), 30)
@@ -205,7 +210,6 @@ class CursesUI(object):
 		ch = self.mainscr.getch()
 		if QUITTING_TIME.isSet(): return False
 
-		logging.info(repr(threading.enumerate()))
 		logging.debug("input: %r (%s)" % (ch, ascii.unctrl(ch)))
 		if ascii.isprint(ch):
 			self.add_char(chr(ch))
@@ -219,6 +223,8 @@ class CursesUI(object):
 			self.select(NEXT)
 		elif ch == ascii.ESC:
 			self.set_query("")
+		elif ch == curses.KEY_RESIZE:
+			self.resize()
 		elif ch == ascii.EOT: # ctrl-D
 			return False
 		self.update()
