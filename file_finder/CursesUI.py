@@ -242,7 +242,7 @@ class CursesUI(object):
 		logging.debug("input: %r (%s)" % (ch, ascii.unctrl(ch)))
 		if ascii.isprint(ch):
 			self.add_char(chr(ch))
-		elif ch == ascii.BS or ch == ascii.DEL:
+		elif ch in (ascii.BS, ascii.DEL, curses.KEY_BACKSPACE):
 			self.remove_char()
 		elif ch == ascii.NL:
 			self.open_selected()
