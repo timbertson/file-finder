@@ -58,8 +58,7 @@ class Repl(object):
 			logging.warning("no such index: %s" % (index,))
 			return
 		filepath = self.found_files[index]
-		logging.info("opening file: %s" % (filepath,))
-		subprocess.Popen(self.opt.open_cmd + [filepath])
+		self.opt.open(filepath)
 
 	def _loop(self):
 		q = raw_input(blue("\nfind/open file: "))

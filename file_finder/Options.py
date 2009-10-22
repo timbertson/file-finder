@@ -1,5 +1,7 @@
 import optparse
 import logging
+import os
+import subprocess
 
 from PathFilter import PathFilter
 
@@ -44,4 +46,9 @@ class Options(object):
 		else:
 			from CursesUI import CursesUI
 			CursesUI(self).run()
+	
+	def open(self, filepath):
+		logging.info("opening file: %s" % (filepath,))
+		fullpath = os.path.join(self.base_path, filepath)
+		subprocess.Popen(self.open_cmd + [fullpath])
 

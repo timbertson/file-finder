@@ -188,8 +188,7 @@ class CursesUI(object):
 			logging.warning("no such index: %s" % (index,))
 			return
 		filepath = self.results[index][-1]
-		logging.info("opening file: %s" % (filepath,))
-		subprocess.Popen(self.opt.open_cmd + [filepath])
+		self.opt.open(filepath)
 	
 	def select(self, amount):
 		self.ui_lock.acquire()
