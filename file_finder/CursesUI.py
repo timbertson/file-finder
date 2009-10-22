@@ -124,7 +124,6 @@ class CursesUI(object):
 	
 	def resize(self):
 		self._init_screens()
-		self.update()
 
 	def _init_input(self):
 		self.results = []
@@ -133,6 +132,9 @@ class CursesUI(object):
 		self.set_query("")
 	
 	def update(self):
+		if (self.win_height, self.win_width) != self.mainscr.getmaxyx():
+			logging.warning("resizing...")
+			self.resize()
 		self.draw_input()
 		self.draw_results()
 		self.draw_status()
@@ -251,8 +253,6 @@ class CursesUI(object):
 			self.select(NEXT)
 		elif ch == ascii.ESC:
 			self.set_query("")
-		elif ch == curses.KEY_RESIZE:
-			self.resize()
 		elif ch == ascii.EOT: # ctrl-D
 			return False
 		self.ui_lock.acquire()
