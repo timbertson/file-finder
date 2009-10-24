@@ -8,6 +8,10 @@ from Logger import log
 from threading import Thread
 from Queue import Queue
 
+def adapt_str(s):
+    return s.decode("iso-8859-1")
+
+sqlite3.register_adapter(str, adapt_str)
 
 class DBWrapper(Thread):
     """
@@ -110,3 +114,4 @@ if __name__ == '__main__':
     db.execute("INSERT INTO files (path, name) VALUES (?, ?)",
          ("vbabiy", "/home/vbabiy"))
     print (db.select("SELECT * FROM files"))
+
