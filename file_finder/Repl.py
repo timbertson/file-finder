@@ -76,7 +76,7 @@ class Repl(object):
 
 	def run(self):
 		logging.basicConfig(level=self.opt.log_level)
-		work_thread = threading.Thread(target=self._run)
+		work_thread = threading.Thread(target=self._run, name="repl")
 		work_thread.daemon = True
 		work_thread.start()
 		# the main thread is just going to wait till someone tells it to quit

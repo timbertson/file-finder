@@ -42,10 +42,10 @@ class CursesUI(object):
 		def _doit():
 			self.finder = FileFinder(self.opt.base_path, path_filter=self.opt.path_filter, quit_indicator=QUITTING_TIME)
 			logging.info("getting file list...")
-			self.finder.populate(watch=False)
+			self.finder.populate(watch=self.opt.use_inotify)
 			curses.wrapper(self._run)
 
-		work_thread = threading.Thread(target=_doit)
+		work_thread = threading.Thread(target=_doit, name="Curses master")
 		work_thread.start()
 		# the main thread is just going to wait till someone tells it to quit
 		try:
@@ -83,8 +83,8 @@ class CursesUI(object):
 		self._init_input()
 		self.update()
 
-		display_thread = threading.Thread(target=self.display_loop)
-		search_thread = threading.Thread(target=self.search_loop)
+		display_thread = threading.Thread(target=self.display_loop, name="Curses display")
+		search_thread = threading.Thread(target=self.search_loop, name="Curses search")
 		display_thread.daemon = True
 		search_thread.daemon = True
 

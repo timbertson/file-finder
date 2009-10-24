@@ -40,7 +40,7 @@ class FileFinder(object):
 			_run()
 		else:
 			from threading import Thread
-			worker = Thread(target=_run_with_sigint)
+			worker = Thread(target=_run_with_sigint, name="file enumerator / watcher")
 			worker.daemon = True
 			worker.start()
 	
