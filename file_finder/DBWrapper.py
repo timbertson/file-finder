@@ -27,27 +27,26 @@ class DBWrapper(Thread):
     def run(self):
         self._create_db()
         while True:
-            if not self._queue.empty():
-                try:
-                    sql, params, result = self._queue.get()
-                    log.debug("[DBWrapper] QUERY: %s" % sql)
-                    log.debug("[DBWrapper] PARAMS: %s" % str(params))
-                    log.debug("[DBWrapper] RESULT: " + str(result))
-                    cursor = self._db.cursor()
-                    if params:
-                        cursor.execute(sql, params)
-                    else:
-                        cursor.execute(sql)
-                except sqlite3.OperationalError, e:
-                    log.error("[DBWrapper] OperationalError : %s" % e)
+            sql, params, result = self._queue.get()
+            log.debug("[DBWrapper] QUERY: %s" % sql)
+            log.debug("[DBWrapper] PARAMS: %s" % str(params))
+            log.debug("[DBWrapper] RESULT: " + str(result))
+            try:
+                cursor = self._db.cursor()
+                if params:
+                    cursor.execute(sql, params)
+                else:
+                    cursor.execute(sql)
+            except sqlite3.OperationalError, e:
+                log.error("[DBWrapper] OperationalError : %s" % e)
 
-                if result:
-                    log.debug("[DBWrapper] Putting Results")
-                    for row in cursor.fetchall():
-                        result.put(row)
-                    result.put("__END__")
+            if result:
+                log.debug("[DBWrapper] Putting Results")
+                for row in cursor.fetchall():
+                    result.put(row)
+                result.put("__END__")
 
-                self._db.commit()
+            self._db.commit()
 
     def execute(self, sql, params=None, result=None):
         self._queue.put((sql, params, result))
