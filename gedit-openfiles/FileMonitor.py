@@ -52,22 +52,22 @@ class FileMonitor(object):
             ignore = "^"+ignore+"$"
             log.debug("[FileMonitor] Ignore Regex = %s" % ignore)
             self._ignore_regexs.append(re.compile(ignore))
-
+    
     def add_dir(self, path):
         """
         Starts a WalkDirectoryThread to add the directory
         """
-        if self.validate(path):
+        if self.validate(path, is_file=False):
             self._watch_manager.add_watch(path, EVENT_MASK, rec=True)
             self._walk_thread = WalkDirectoryThread(self, path,
                 self._ignore_regexs)
 
     def add_file(self, path, name):
-        if self.validate(name):
+        if self.validate(name, is_file=True):
             self._db_wrapper.add_file(path, name)
             self._file_count = self._file_count + 1
 
-    def validate(self, name):
+    def validate(self, name, is_file=False):
          # Check to make sure the file not in the ignore list
         for ignore_re in self._ignore_regexs:
             if ignore_re.match(name):
