@@ -65,10 +65,14 @@ class FileMonitor(object):
             self._walk_thread = WalkDirectoryThread(self, path,
                 self._ignore_regexs)
 
+    def _make_relative_path(self, path):
+        if path.startswith(self._root):
+            return path[len(self._root)+1:]
+        return path
+
     def add_file(self, path, name):
         if self.validate(name, is_file=True):
-            if path.startswith(self._root):
-                path = path[len(self._root)+1:]
+            path = self._make_relative_path(path)
             self._db_wrapper.add_file(path, name)
             self._file_count = self._file_count + 1
 
@@ -81,6 +85,7 @@ class FileMonitor(object):
         return True
 
     def remove_file(self, path, name):
+        path = self._make_relative_path(path)
         self._db_wrapper.remove_file(path, name)
 
     def remove_dir(self, path):
