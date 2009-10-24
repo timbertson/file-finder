@@ -11,12 +11,15 @@ import stat
 import re
 import urllib
 from Logger import log
-from pyinotify import WatchManager, Notifier, ThreadedNotifier, \
-EventsCodes, ProcessEvent
+from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
 from threading import Thread
 
-EVENT_MASK = EventsCodes.IN_DELETE | EventsCodes.IN_CREATE | \
-EventsCodes.IN_MOVED_TO | EventsCodes.IN_MOVED_FROM # watched events
+try:
+    EVENT_MASK = EventsCodes.IN_DELETE | EventsCodes.IN_CREATE | EventsCodes.IN_MOVED_TO | EventsCodes.IN_MOVED_FROM # watched events
+except AttributeError:
+    # Support for new version of pyinotify
+    from pyinotify import IN_DELETE, IN_CREATE, IN_MOVED_FROM, IN_MOVED_TO
+    EVENT_MASK = IN_DELETE | IN_CREATE | IN_MOVED_TO | IN_MOVED_FROM
 
 
 class FileMonitor(object):
