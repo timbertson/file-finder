@@ -152,7 +152,7 @@ class CursesUI(object):
 		#TODO: scroll results buffer
 		linepos = 0
 		indent_width = 6
-		filename_len = min(int(self.win_width / 1.5), 30)
+		filename_len = min(int(self.win_width / 1.5), 50)
 		path_len = self.win_width - filename_len - 1 - indent_width
 
 		self.results_win.clear()
