@@ -177,7 +177,7 @@ class CursesUI(object):
 			linepos += 1
 			if linepos >= MAX_RESULTS:
 				break
-		if linepos == 0 and len(self.query) > 0:
+		if linepos == 0 and len(self.query) > 0 and self.query_queue.empty():
 			self.results_win.insnstr(linepos, indent_width, 'No Matches...', self.win_width - indent_width, A_ERR)
 	
 	def draw_status(self):
