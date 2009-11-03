@@ -48,7 +48,7 @@ class FileMonitor(object):
         self.add_dir(self._root, on_complete = on_complete)
 
     def _set_ignore_list(self):
-        log.info("[FileMonitor] Set Regexs for Ignore List")
+        log.debug("[FileMonitor] Set Regexs for Ignore List")
 
         ignore_res = []
         # Complie Ignore list in to a list of regexs
@@ -149,7 +149,7 @@ class WalkDirectoryThread(Thread):
                     # Check to see if it is a dir
                     if not os.path.isdir(os.path.join(path, name)):
                         self._file_monitor.add_file(path, name)
-        log.info("***** Total files %s *****" % (self._file_monitor._file_count, ))
+        log.debug("***** Total files %s *****" % (self._file_monitor._file_count, ))
         if self._on_complete:
             self._on_complete()
 
@@ -191,29 +191,29 @@ class FileProcessEvent(ProcessEvent):
         path = os.path.join(event.path, event.name)
         
         if self.is_dir(event):
-            log.info("[FileProcessEvent] CREATED DIRECTORY: " + path)
+            log.debug("[FileProcessEvent] CREATED DIRECTORY: " + path)
             self._file_monitor.add_dir(path)
         else:
-            log.info("[FileProcessEvent] CREATED FILE: " + path)
+            log.debug("[FileProcessEvent] CREATED FILE: " + path)
             self._file_monitor.add_file(event.path, event.name)
 
     def process_IN_DELETE(self, event):
         path = os.path.join(event.path, event.name)
         if self.is_dir(event):
-            log.info("[FileProcessEvent] DELETED DIRECTORY: " + path)
+            log.debug("[FileProcessEvent] DELETED DIRECTORY: " + path)
             self._file_monitor.remove_dir(path)
         else:
-            log.info("[FileProcessEvent] DELETED FILE: " + path)
+            log.debug("[FileProcessEvent] DELETED FILE: " + path)
             self._file_monitor.remove_file(event.path, event.name)
 
     def process_IN_MOVED_FROM(self, event):
         path = os.path.join(event.path, event.name)
-        log.info("[FileProcessEvent] MOVED_FROM: " + path)
+        log.debug("[FileProcessEvent] MOVED_FROM: " + path)
         self.process_IN_DELETE(event)
 
     def process_IN_MOVED_TO(self, event):
         path = os.path.join(event.path, event.name)
-        log.info("[FileProcessEvent] MOVED_TO: " + path)
+        log.debug("[FileProcessEvent] MOVED_TO: " + path)
         self.process_IN_CREATE(event)
 
 
