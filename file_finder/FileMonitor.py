@@ -29,7 +29,7 @@ class FileMonitor(object):
     FileMonitor Class keeps track of all files down a tree starting at the root
     """
 
-    def __init__(self, db_wrapper, root, config):
+    def __init__(self, db_wrapper, root, config, on_complete=None):
         self._file_count = 0
         self._db_wrapper = db_wrapper
         self._root = os.path.realpath(root)
@@ -45,7 +45,7 @@ class FileMonitor(object):
         self._notifier.start()
 
         # initial walk
-        self.add_dir(self._root)
+        self.add_dir(self._root, on_complete = on_complete)
 
     def _set_ignore_list(self):
         log.info("[FileMonitor] Set Regexs for Ignore List")
@@ -59,14 +59,14 @@ class FileMonitor(object):
             log.debug("[FileMonitor] Ignore Regex = %s" % ignore)
             self._ignore_regexs.append(re.compile(ignore))
     
-    def add_dir(self, path):
+    def add_dir(self, path, on_complete=None):
         """
         Starts a WalkDirectoryThread to add the directory
         """
         if self.validate(path, is_file=False):
             self._watch_manager.add_watch(path, EVENT_MASK, rec=True)
             self._walk_thread = WalkDirectoryThread(self, path,
-                self._ignore_regexs)
+                self._ignore_regexs, on_complete)
 
     def _make_relative_path(self, path):
         if path.startswith(self._root):
@@ -128,12 +128,13 @@ class WalkDirectoryThread(Thread):
     to the database.
     """
 
-    def __init__(self, file_monitor, root, ignore_regexs):
+    def __init__(self, file_monitor, root, ignore_regexs, on_complete=None):
         log.debug("[FileMonitor] WalkDirectoryThread Root: %s" % root)
         Thread.__init__(self)
         self._file_monitor = file_monitor
         self._root = root
         self._ignore_regexs = ignore_regexs
+        self._on_complete = on_complete
         self.start()
 
     def run(self):
@@ -149,6 +150,8 @@ class WalkDirectoryThread(Thread):
                     if not os.path.isdir(os.path.join(path, name)):
                         self._file_monitor.add_file(path, name)
         log.info("***** Total files %s *****" % (self._file_monitor._file_count, ))
+        if self._on_complete:
+            self._on_complete()
 
     def _walk_file_system(self, root):
         """
