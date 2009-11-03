@@ -4,12 +4,14 @@ import os
 import sys
 import subprocess
 from curses import ascii
+from time import sleep
 import threading
 from Queue import Queue, Empty
 
 from FileFinder import FileFinder
 from PathFilter import PathFilter
 from Highlight import Highlight
+from QueueHandler import QueueHandler
 
 import logging
 
@@ -31,18 +33,22 @@ QUITTING_TIME = threading.Event()
 class CursesUI(object):
 	def __init__(self, options):
 		self.opt = options
-		self.status = "   ctrl-d to exit"
+		self.status = ""
 		self.ui_lock = threading.Lock()
 		self.query_queue = Queue()
 		self.results_queue = Queue()
+		self.status_queue = Queue()
 
 	def run(self):
 		logging.basicConfig(level=self.opt.log_level, filename='/tmp/file-finder.log')
-		logging.info("start..")
+		rootLogger = logging.getLogger()
+		rootLogger.addHandler(QueueHandler(self.status_queue, level=logging.INFO))
+		logging.info("scanning directory ...")
 		def _doit():
 			self.finder = FileFinder(self.opt.base_path, path_filter=self.opt.path_filter, quit_indicator=QUITTING_TIME)
-			logging.info("getting file list...")
-			self.finder.populate(watch=self.opt.use_inotify)
+			def log_scan_complete():
+				logging.info("file scan complete")
+			self.finder.populate(watch=self.opt.use_inotify, on_complete = log_scan_complete)
 			curses.wrapper(self._run)
 
 		work_thread = threading.Thread(target=_doit, name="Curses master")
@@ -61,7 +67,7 @@ class CursesUI(object):
 			try:
 				query = self.query_queue.get(timeout=0.1)
 			except Empty: pass
-			logging.info("searching: %r" % (query))
+			logging.debug("searching: %r" % (query))
 			if query:
 				results = self.finder.find(query)
 			else:
@@ -75,6 +81,17 @@ class CursesUI(object):
 			self.set_results(results, query)
 			self.update()
 			self.ui_lock.release()
+	
+	def status_loop(self):
+		def _stat(msg):
+			self.ui_lock.acquire()
+			self.status = msg
+			self.update()
+			self.ui_lock.release()
+		while True:
+			status_msg = self.status_queue.get()
+			_stat(status_msg)
+			sleep(0.5)
 
 	def _run(self, mainscr):
 		self.mainscr = mainscr
@@ -85,11 +102,14 @@ class CursesUI(object):
 
 		display_thread = threading.Thread(target=self.display_loop, name="Curses display")
 		search_thread = threading.Thread(target=self.search_loop, name="Curses search")
+		status_thread = threading.Thread(target=self.status_loop, name="Curses status")
 		display_thread.daemon = True
 		search_thread.daemon = True
+		status_thread.daemon = True
 
 		display_thread.start()
 		search_thread.start()
+		status_thread.start()
 
 		self._input_loop()
 	
@@ -263,7 +283,7 @@ class CursesUI(object):
 
 	def _input_loop(self):
 		try:
-			logging.info("input loop begins")
+			logging.debug("input loop begins")
 			while self._input_iteration(): pass
 		except (KeyboardInterrupt, EOFError):
 			logging.info("exiting...")

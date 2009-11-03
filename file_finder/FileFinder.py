@@ -16,9 +16,9 @@ class FileFinder(object):
 	def clear(self):
 		db.clear()
 
-	def populate(self, sync=False, watch=True):
+	def populate(self, sync=False, watch=True, on_complete=None):
 		def _run():
-			if watch and self._poll():
+			if watch and self._poll(on_complete=on_complete):
 				return
 
 			for dirpath, dirnames, filenames in os.walk(self.basepath):
@@ -26,7 +26,8 @@ class FileFinder(object):
 				for filename in filenames:
 					rel_dirpath = dirpath[len(self.basepath):]
 					self.db.add_file(rel_dirpath, filename)
-
+			if on_complete:
+				on_complete()
 
 		def _run_with_sigint():
 			try:
@@ -44,7 +45,7 @@ class FileFinder(object):
 			worker.daemon = True
 			worker.start()
 	
-	def _poll(self):
+	def _poll(self, on_complete=None):
 		try:
 			from FileMonitor import FileMonitor
 		except ImportError:
@@ -57,7 +58,7 @@ class FileFinder(object):
 		def wrapped_validate(instance, _path, is_file=False):
 			return self.path_filter.should_include(_path, is_file=is_file)
 		FileMonitor.validate = wrapped_validate
-		monitor = FileMonitor(self.db, self.basepath, DummyConfig())
+		monitor = FileMonitor(self.db, self.basepath, DummyConfig(), on_complete=on_complete)
 		return True
 
 	

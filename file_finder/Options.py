@@ -25,7 +25,7 @@ class Options(object):
 
 		(options, args) = parser.parse_args()
 		self.verbose = options.verbose
-		self.log_level = logging.DEBUG if options.verbose else logging.WARNING
+		self.log_level = logging.DEBUG if options.verbose else logging.INFO
 
 		self.open_cmd = options.open_cmd.split()
 		self.use_inotify = not options.no_watch
@@ -48,7 +48,7 @@ class Options(object):
 			CursesUI(self).run()
 	
 	def open(self, filepath):
-		logging.info("opening file: %s" % (filepath,))
+		logging.debug("opening file: %s" % (filepath,))
 		fullpath = os.path.join(self.base_path, filepath)
 		subprocess.Popen(self.open_cmd + [fullpath])
 
