@@ -13,7 +13,6 @@ import urllib
 from Logger import log
 from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
 from threading import Thread
-from Config import Config
 
 try:
     # Supports < pyinotify 0.8.6
@@ -256,5 +255,6 @@ class FileWrapper(object):
 
 if __name__ == '__main__':
     from DBWrapper import DBWrapper
+    from Config import Config
     db = DBWrapper()
     file_mon = FileMonitor(db, ".", Config())
