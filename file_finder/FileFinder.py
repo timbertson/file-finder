@@ -49,6 +49,8 @@ class FileFinder(object):
 		try:
 			from FileMonitor import FileMonitor
 		except ImportError:
+			import traceback
+			logging.debug(traceback.format_exc())
 			logging.error("Can't import FileMonitor - directory updates will be ignored")
 			return False
 		class DummyConfig(object):
