@@ -13,6 +13,7 @@ import urllib
 from Logger import log
 from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
 from threading import Thread
+from threadpool import ThreadPool
 
 try:
     # Supports < pyinotify 0.8.6
@@ -21,6 +22,9 @@ except AttributeError:
     # Support for pyinotify 0.8.6
     from pyinotify import IN_DELETE, IN_CREATE, IN_MOVED_FROM, IN_MOVED_TO
     EVENT_MASK = IN_DELETE | IN_CREATE | IN_MOVED_TO | IN_MOVED_FROM
+    
+    
+THREAD_POOL_WORKS = 20
 
 
 class FileMonitor(object):
@@ -28,14 +32,15 @@ class FileMonitor(object):
     FileMonitor Class keeps track of all files down a tree starting at the root
     """
 
-    def __init__(self, db_wrapper, root, config, on_complete=None):
+    def __init__(self, db_wrapper, root, config):
         self._file_count = 0
         self._db_wrapper = db_wrapper
         self._root = os.path.realpath(root)
-        self._walk_thread = None
         self._config = config
         self._ignore_regexs = []
         self._set_ignore_list()
+        
+        self._thread_pool = ThreadPool(THREAD_POOL_WORKS)
 
         # Add a watch to the root of the dir
         self._watch_manager = WatchManager()
@@ -44,28 +49,28 @@ class FileMonitor(object):
         self._notifier.start()
 
         # initial walk
-        self.add_dir(self._root, on_complete = on_complete)
+        self.add_dir(self._root)
 
     def _set_ignore_list(self):
-        log.debug("[FileMonitor] Set Regexs for Ignore List")
+        log.info("[FileMonitor] Set Regexs for Ignore List")
 
-        ignore_res = []
+        self._ignore_regexs = []
         # Complie Ignore list in to a list of regexs
         for ignore in self._config.get_value("IGNORE_FILE_FILETYPES"):
+            ignore = ignore.strip()
             ignore = ignore.replace(".", "\.")
             ignore = ignore.replace("*", ".*")
             ignore = "^"+ignore+"$"
             log.debug("[FileMonitor] Ignore Regex = %s" % ignore)
             self._ignore_regexs.append(re.compile(ignore))
-    
-    def add_dir(self, path, on_complete=None):
+
+    def add_dir(self, path):
         """
         Starts a WalkDirectoryThread to add the directory
         """
-        if self.validate(path, is_file=False):
-            self._watch_manager.add_watch(path, EVENT_MASK, rec=True)
-            self._walk_thread = WalkDirectoryThread(self, path,
-                self._ignore_regexs, on_complete)
+        if self.validate(path, if_file=False):
+            self._watch_manager.add_watch(path, EVENT_MASK)
+            self._thread_pool.queueTask(self.walk_directory, path)
 
     def _make_relative_path(self, path):
         if path.startswith(self._root):
@@ -84,6 +89,7 @@ class FileMonitor(object):
             if ignore_re.match(name):
                 log.debug("[WalkDirectoryThread] ##### Ignored %s #####", name)
                 return False
+        log.debug("[WalkDirectoryThread] # Passed %s", name)
         return True
 
     def remove_file(self, path, name):
@@ -109,6 +115,7 @@ class FileMonitor(object):
 
     def refresh_database(self):
         self._db_wrapper.clear_database()
+        self._set_ignore_list()
         self.add_dir(self._root)
 
     def search_for_files(self, name):
@@ -120,59 +127,24 @@ class FileMonitor(object):
                     row[0], row[1]))
         return res_filewrappers
 
-
-class WalkDirectoryThread(Thread):
-    """
-    Thread that will take a DBWrapper and a root directory and add ever file
-    to the database.
-    """
-
-    def __init__(self, file_monitor, root, ignore_regexs, on_complete=None):
-        log.debug("[FileMonitor] WalkDirectoryThread Root: %s" % root)
-        Thread.__init__(self)
-        self._file_monitor = file_monitor
-        self._root = root
-        self._ignore_regexs = ignore_regexs
-        self._on_complete = on_complete
-        self.start()
-
-    def run(self):
-        """
-        Runs the Thread
-        """
-        if os.path.isdir(self._root):
-            for (path, names) in self._walk_file_system(self._root):
-                log.debug("[WalkDirectoryThread] Path: %s" % path)
-                log.debug("[WalkDirectoryThread] Names: %s" % names)
-                for name in names:
-                    # Check to see if it is a dir
-                    if not os.path.isdir(os.path.join(path, name)):
-                        self._file_monitor.add_file(path, name)
-        log.debug("***** Total files %s *****" % (self._file_monitor._file_count, ))
-        if self._on_complete:
-            self._on_complete()
-
-    def _walk_file_system(self, root):
+    def walk_directory(self, root):
         """
         From a give root of a tree this method will walk through ever branch
         and return a generator.
         """
-        names = os.listdir(root)
-        for name in names:
-            try:
-                file_stat = os.lstat(os.path.join(root, name))
-            except os.error:
-                continue
-
-            if stat.S_ISDIR(file_stat.st_mode):
-                # Check to make sure the file not in the ignore list
-                ignore = not self._file_monitor.validate(name, is_file=False)
-                if ignore:
+        if os.path.isdir(root):
+            names = os.listdir(root)
+            for name in names:
+                try:
+                    file_stat = os.lstat(os.path.join(root, name))
+                except os.error:
                     continue
-                for (newroot, children) in self._walk_file_system(
-                    os.path.join(root, name)):
-                    yield newroot, children
-        yield root, names
+
+                if stat.S_ISDIR(file_stat.st_mode):
+                    if self._file_monitor.validate(name, is_file=False)
+                      self.add_dir(os.path.join(root, name))
+                else:
+                    self.add_file(root, name)
 
 
 class FileProcessEvent(ProcessEvent):
@@ -190,29 +162,29 @@ class FileProcessEvent(ProcessEvent):
         path = os.path.join(event.path, event.name)
         
         if self.is_dir(event):
-            log.debug("[FileProcessEvent] CREATED DIRECTORY: " + path)
+            log.info("[FileProcessEvent] CREATED DIRECTORY: " + path)
             self._file_monitor.add_dir(path)
         else:
-            log.debug("[FileProcessEvent] CREATED FILE: " + path)
+            log.info("[FileProcessEvent] CREATED FILE: " + path)
             self._file_monitor.add_file(event.path, event.name)
 
     def process_IN_DELETE(self, event):
         path = os.path.join(event.path, event.name)
         if self.is_dir(event):
-            log.debug("[FileProcessEvent] DELETED DIRECTORY: " + path)
+            log.info("[FileProcessEvent] DELETED DIRECTORY: " + path)
             self._file_monitor.remove_dir(path)
         else:
-            log.debug("[FileProcessEvent] DELETED FILE: " + path)
+            log.info("[FileProcessEvent] DELETED FILE: " + path)
             self._file_monitor.remove_file(event.path, event.name)
 
     def process_IN_MOVED_FROM(self, event):
         path = os.path.join(event.path, event.name)
-        log.debug("[FileProcessEvent] MOVED_FROM: " + path)
+        log.info("[FileProcessEvent] MOVED_FROM: " + path)
         self.process_IN_DELETE(event)
 
     def process_IN_MOVED_TO(self, event):
         path = os.path.join(event.path, event.name)
-        log.debug("[FileProcessEvent] MOVED_TO: " + path)
+        log.info("[FileProcessEvent] MOVED_TO: " + path)
         self.process_IN_CREATE(event)
 
 
@@ -261,3 +233,4 @@ if __name__ == '__main__':
     from Config import Config
     db = DBWrapper()
     file_mon = FileMonitor(db, ".", Config())
+
