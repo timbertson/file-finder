@@ -47,7 +47,7 @@ class CursesUI(object):
 		def _doit():
 			self.finder = FileFinder(self.opt.base_path, path_filter=self.opt.path_filter, quit_indicator=QUITTING_TIME)
 			def log_scan_complete():
-				logging.info("file scan complete")
+				logging.warn("file scan complete")
 			self.finder.populate(watch=self.opt.use_inotify, on_complete = log_scan_complete)
 			curses.wrapper(self._run)
 

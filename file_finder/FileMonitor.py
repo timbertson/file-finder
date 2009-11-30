@@ -32,7 +32,7 @@ class FileMonitor(object):
     FileMonitor Class keeps track of all files down a tree starting at the root
     """
 
-    def __init__(self, db_wrapper, root, config):
+    def __init__(self, db_wrapper, root, config, on_complete=None):
         self._file_count = 0
         self._db_wrapper = db_wrapper
         self._root = os.path.realpath(root)
@@ -49,7 +49,7 @@ class FileMonitor(object):
         self._notifier.start()
 
         # initial walk
-        self.add_dir(self._root)
+        self.add_dir(self._root, on_complete = on_complete)
 
     def _set_ignore_list(self):
         log.info("[FileMonitor] Set Regexs for Ignore List")
@@ -64,13 +64,17 @@ class FileMonitor(object):
             log.debug("[FileMonitor] Ignore Regex = %s" % ignore)
             self._ignore_regexs.append(re.compile(ignore))
 
-    def add_dir(self, path):
+    def add_dir(self, path, on_complete=None):
         """
         Starts a WalkDirectoryThread to add the directory
         """
-        if self.validate(path, if_file=False):
+        if self.validate(path, is_file=False):
             self._watch_manager.add_watch(path, EVENT_MASK)
-            self._thread_pool.queueTask(self.walk_directory, path)
+            if on_complete:
+                _on_complete = lambda *a: on_complete()
+            else:
+                _on_complete = None
+            self._thread_pool.queueTask(self.walk_directory, path, _on_complete)
 
     def _make_relative_path(self, path):
         if path.startswith(self._root):
@@ -141,7 +145,7 @@ class FileMonitor(object):
                     continue
 
                 if stat.S_ISDIR(file_stat.st_mode):
-                    if self._file_monitor.validate(name, is_file=False)
+                    if self.validate(name, is_file=False):
                       self.add_dir(os.path.join(root, name))
                 else:
                     self.add_file(root, name)
