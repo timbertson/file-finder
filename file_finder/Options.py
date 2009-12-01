@@ -26,6 +26,10 @@ class Options(object):
 		(options, args) = parser.parse_args()
 		self.verbose = options.verbose
 		self.log_level = logging.DEBUG if options.verbose else logging.INFO
+		if not (options.verbose or options.basic):
+			# carelessly discard stdout and stderr
+			import sys
+			sys.stdout = sys.stderr = open(os.devnull, 'w')
 
 		self.open_cmd = options.open_cmd.split()
 		self.use_inotify = not options.no_watch
