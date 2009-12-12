@@ -277,7 +277,7 @@ class CursesUI(object):
 
 	def _redraw(self, *screens):
 		logging.debug("redrawing...")
-		if len(screens) == 0:
+		if not screens:
 			screens = self.screens
 		for scr in screens:
 			if scr is self.results_win:
