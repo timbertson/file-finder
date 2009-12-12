@@ -116,6 +116,7 @@ class CursesUI(object):
 	def _init_colors(self):
 		global A_INPUT, A_FILENAME, A_PATH, A_HIGHLIGHT, A_ERR, A_PROMPT
 		curses.use_default_colors()
+		curses.curs_set(1) # line (input) cursor
 		A_INPUT = curses.A_REVERSE
 
 		n_filename = 1
@@ -123,11 +124,12 @@ class CursesUI(object):
 		n_hi = 3
 		n_err = 4
 		n_prompt = 5
-		curses.init_pair(n_filename, curses.COLOR_WHITE, -1)
-		curses.init_pair(n_path, curses.COLOR_BLACK, -1)
-		curses.init_pair(n_hi, curses.COLOR_GREEN, -1)
+		bg_index = -1
+		curses.init_pair(n_filename, curses.COLOR_WHITE, bg_index)
+		curses.init_pair(n_path, curses.COLOR_BLACK, bg_index)
+		curses.init_pair(n_hi, curses.COLOR_GREEN, bg_index)
 		curses.init_pair(n_err, curses.COLOR_WHITE, curses.COLOR_RED)
-		curses.init_pair(n_prompt, curses.COLOR_BLUE, -1)
+		curses.init_pair(n_prompt, curses.COLOR_BLUE, bg_index)
 
 		A_FILENAME = curses.color_pair(n_filename)
 		A_PATH = curses.color_pair(n_path)
@@ -140,20 +142,24 @@ class CursesUI(object):
 		self.input_win = curses.newwin(1, self.win_width, 0, 0)
 		self.results_win = curses.newpad(MAX_RESULTS, self.win_width)
 		self.status_win = curses.newwin(1, self.win_width, self.win_height-1, 0)
-		self.screens = (self.input_win, self.results_win, self.status_win)
+
+		#IMPORTANT: input_win *must* be the last, so that it gets redrawed
+		#           last (and therefore gets the cursor)
+		self.screens = (self.results_win, self.status_win, self.input_win)
 	
 	def resize(self):
 		self._init_screens()
 
 	def _init_input(self):
 		self.results = []
+		self.input_position = 0
 		self.selected = 0
 		self.results_scroll = 0
 		self.set_query("")
 	
 	def update(self):
 		if (self.win_height, self.win_width) != self.mainscr.getmaxyx():
-			logging.warning("resizing...")
+			logging.debug("resizing...")
 			self.resize()
 		self.draw_input()
 		self.draw_results()
@@ -167,6 +173,8 @@ class CursesUI(object):
 		self.input_win.addnstr(0,0, find_text, self.win_width, A_PROMPT)
 		self.input_win.addnstr(0, len(find_text), self.query, self.win_width, A_INPUT)
 		self.input_win.bkgdset(' ', curses.A_REVERSE)
+
+		self.input_win.move(0,self.input_position + len(find_text))
 		
 	def draw_results(self):
 		#TODO: scroll results buffer
@@ -232,17 +240,35 @@ class CursesUI(object):
 	
 	def set_results(self, results, query):
 		self.highlight = Highlight(query)
-		self.input_win.move(0, len(query))
-		self.input_win.cursyncup()
 		self.results = list(results)
 		self.selected = 0
 
 	def add_char(self, ch):
-		self.set_query(self.query + ch)
+		new_query = self.modify_query_as_list(lambda q: q.insert(self.input_position, ch))
+		self.input_position += 1
+		self.set_query(new_query)
 		logging.debug("query = %s" % (self.query, ))
 	
-	def remove_char(self):
-		self.set_query(self.query[:-1])
+	def modify_query_as_list(self, proc):
+		query_list = list(self.query)
+		proc(query_list)
+		return ''.join(query_list)
+	
+	def remove_char(self, forwards=False):
+		letter_index = self.input_position if forwards else self.input_position - 1
+		if letter_index >= len(self.query) or letter_index < 0:
+			return
+		new_query = self.modify_query_as_list(lambda q: q.pop(letter_index))
+		if forwards:
+			self.input_position = max(self.input_position, len(self.query))
+		elif self.input_position > 0:
+			self.input_position -= 1
+		self.set_query(new_query)
+	
+	def move_cursor(self, backwards=False):
+		offset = -1 if backwards else 1
+		self.input_position += offset
+		self.input_position = max(0, min(self.input_position, len(self.query)))
 
 	def _redraw(self, *screens):
 		logging.debug("redrawing...")
@@ -271,6 +297,10 @@ class CursesUI(object):
 			self.select(PREVIOUS)
 		elif ch == curses.KEY_DOWN:
 			self.select(NEXT)
+		elif ch == curses.KEY_LEFT:
+			self.move_cursor(backwards=True)
+		elif ch == curses.KEY_RIGHT:
+			self.move_cursor()
 		elif ch == ascii.ESC:
 			self.set_query("")
 		elif ch == ascii.EOT: # ctrl-D
