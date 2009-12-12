@@ -236,6 +236,8 @@ class CursesUI(object):
 		self.query_queue.put(new_query)
 		self.ui_lock.acquire()
 		self.query = new_query
+		if self.input_position > len(self.query):
+			self.input_position = len(self.query)
 		self.ui_lock.release()
 	
 	def set_results(self, results, query):
@@ -269,6 +271,9 @@ class CursesUI(object):
 		offset = -1 if backwards else 1
 		self.input_position += offset
 		self.input_position = max(0, min(self.input_position, len(self.query)))
+	
+	def move_cursor_to(self, index):
+		self.input_position = index
 
 	def _redraw(self, *screens):
 		logging.debug("redrawing...")
@@ -301,6 +306,10 @@ class CursesUI(object):
 			self.move_cursor(backwards=True)
 		elif ch == curses.KEY_RIGHT:
 			self.move_cursor()
+		elif ch == curses.KEY_HOME:
+			self.move_cursor_to(0)
+		elif ch == curses.KEY_END:
+			self.move_cursor_to(len(self.query))
 		elif ch == ascii.ESC:
 			self.set_query("")
 		elif ch == ascii.EOT: # ctrl-D
