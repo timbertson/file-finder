@@ -313,6 +313,7 @@ class CursesUI(object):
 		elif ch == ascii.ESC:
 			self.set_query("")
 		elif ch == ascii.EOT: # ctrl-D
+			logging.debug("EOF")
 			return False
 		self.ui_lock.acquire()
 		self.update()
@@ -330,5 +331,6 @@ class CursesUI(object):
 			import traceback
 			logging.error(traceback.format_exc())
 		finally:
+			logging.debug("setting quit flag")
 			QUITTING_TIME.set()
 

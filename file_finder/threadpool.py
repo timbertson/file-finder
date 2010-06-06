@@ -137,7 +137,7 @@ class ThreadPoolThread(threading.Thread):
 
         """ Initialize the thread and remember the pool. """
         
-        threading.Thread.__init__(self)
+        threading.Thread.__init__(self, name="_pool")
         self.__pool = pool
         self.__isDying = False
         

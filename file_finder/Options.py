@@ -50,6 +50,10 @@ class Options(object):
 		else:
 			from CursesUI import CursesUI
 			CursesUI(self).run()
+			logging.debug("curses UI is finished")
+			import threading
+			for t in threading.enumerate():
+				logging.debug("thread: %r is daemon? %r" % (t.name, t.daemon))
 	
 	def open(self, filepath):
 		logging.debug("opening file: %s" % (filepath,))

@@ -20,7 +20,8 @@ class DBWrapper(Thread):
 
     def __init__(self):
         # Create Database and a queue
-        Thread.__init__(self)
+        Thread.__init__(self, name="db")
+        self.daemon = True
         self._queue = Queue()
         self.start()
 
