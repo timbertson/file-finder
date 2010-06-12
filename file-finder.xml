@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+<?xml-stylesheet type='text/xsl' href='interface.xsl'?>
+<interface xmlns="http://zero-install.sourceforge.net/2004/injector/interface">
+  <name>file-finder</name>
+  <summary>find files... quickly</summary>
+  <description>
+    curses-based file finder, based on gedit-open-files plugin
+  </description>
+
+  <homepage>http://github.com/gfxmonk/file-finder</homepage>
+  <needs-terminal/>
+  <group main="finder">
+    <implementation id="sha1new=73323f6793e85192518dc4eaa39ad32b4377f78a" released="2010-06-12" version="0.1.11">
+      <manifest-digest sha256="2e5707b43e2e8678ab388c13f02729d249f6ccbe2980c9875840cceeb5d7297a"/>
+      <archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.11.tgz" size="29143"/>
+    </implementation>
+  </group>
+</interface>
