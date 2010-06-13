@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <?xml-stylesheet type='text/xsl' href='interface.xsl'?>
-<interface xmlns="http://zero-install.sourceforge.net/2004/injector/interface">
+<interface uri="http://gfxmonk.net/dist/0install/file-finder.xml" xmlns="http://zero-install.sourceforge.net/2004/injector/interface">
   <name>file-finder</name>
   <summary>find files... quickly</summary>
   <description>
