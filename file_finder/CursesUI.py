@@ -48,6 +48,7 @@ class CursesUI(object):
 			self.finder = FileFinder(self.opt.base_path, path_filter=self.opt.path_filter, quit_indicator=QUITTING_TIME)
 			def log_scan_complete():
 				logging.warn("file scan complete")
+				self.clear_status()
 			self.finder.populate(watch=self.opt.use_inotify, on_complete = log_scan_complete)
 			curses.wrapper(self._run)
 
@@ -91,7 +92,7 @@ class CursesUI(object):
 		while True:
 			status_msg = self.status_queue.get()
 			_stat(status_msg)
-			sleep(0.5)
+			sleep(0.8)
 
 	def _run(self, mainscr):
 		self.mainscr = mainscr
@@ -151,6 +152,7 @@ class CursesUI(object):
 		self._init_screens()
 
 	def _init_input(self):
+		curses.raw()
 		self.results = []
 		self.input_position = 0
 		self.selected = 0
@@ -212,13 +214,20 @@ class CursesUI(object):
 		self.status_win.clear()
 		self.status_win.insnstr(0, 0, self.status, self.win_width, A_PATH)
 	
-	def open_selected(self):
+	def with_selected(self, func):
 		index = self.selected
 		if len(self.results) <= index:
 			logging.warning("no such index: %s" % (index,))
+			self.clear_status()
 			return
 		filepath = self.results[index][-1]
-		self.opt.open(filepath)
+		func(filepath)
+		
+	def open_selected(self):
+		def action(path):
+			self.opt.open(path)
+			self.flash(" ** opened **")
+		self.with_selected(action)
 	
 	def select(self, amount):
 		self.ui_lock.acquire()
@@ -274,6 +283,13 @@ class CursesUI(object):
 	
 	def move_cursor_to(self, index):
 		self.input_position = index
+	
+	def flash(self, str):
+		self.status_queue.put(str)
+		self.status_queue.put("")
+	
+	def clear_status(self):
+		self.status_queue.put("")
 
 	def _redraw(self, *screens):
 		logging.debug("redrawing...")
@@ -288,19 +304,35 @@ class CursesUI(object):
 				scr.noutrefresh()
 		curses.doupdate()
 	
+	def copy_selected_path_to_clipboard(self):
+		def action(filepath):
+			try:
+				import pygtk
+				pygtk.require('2.0')
+				import gtk
+				clipboard = gtk.clipboard_get()
+				clipboard.set_text(self.opt.full_path(filepath))
+				clipboard.store()
+				self.flash(" ** copied **")
+			except StandardError, e:
+				logging.warn("error: %s" % (e,))
+				logging.exception("error copying to clipboard")
+		self.with_selected(action)
+
+	
 	def _input_iteration(self):
 		ch = self.mainscr.getch()
 		if QUITTING_TIME.isSet(): return False
-		logging.debug("input: %r (%s)" % (ch, ascii.unctrl(ch)))
+		logging.debug("input: %r (%s / %s)" % (ch, ascii.unctrl(ch), ascii.ctrl(ch)))
 		if ascii.isprint(ch):
 			self.add_char(chr(ch))
 		elif ch in (ascii.BS, ascii.DEL, curses.KEY_BACKSPACE):
 			self.remove_char()
 		elif ch == ascii.NL:
 			self.open_selected()
-		elif ch == curses.KEY_UP:
+		elif ch == curses.KEY_UP or (ascii.ismeta(ch) and ascii.unctrl(ch) == 'a'): # shift+tab???
 			self.select(PREVIOUS)
-		elif ch == curses.KEY_DOWN:
+		elif ch == curses.KEY_DOWN or ch == curses.ascii.TAB:
 			self.select(NEXT)
 		elif ch == curses.KEY_LEFT:
 			self.move_cursor(backwards=True)
@@ -310,11 +342,16 @@ class CursesUI(object):
 			self.move_cursor_to(0)
 		elif ch == curses.KEY_END:
 			self.move_cursor_to(len(self.query))
+		elif ascii.isctrl(ch) and ascii.ctrl(ch) in (ascii.STX, ascii.ETX, ascii.CAN): # ctrl-c, variously o_O
+			logging.debug("copy to clipboard")
+			self.copy_selected_path_to_clipboard()
 		elif ch == ascii.ESC:
 			self.set_query("")
 		elif ch == ascii.EOT: # ctrl-D
 			logging.debug("EOF")
 			return False
+		else:
+			logging.debug("not handled...")
 		self.ui_lock.acquire()
 		self.update()
 		self.ui_lock.release()

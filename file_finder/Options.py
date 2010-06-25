@@ -57,6 +57,9 @@ class Options(object):
 	
 	def open(self, filepath):
 		logging.debug("opening file: %s" % (filepath,))
-		fullpath = os.path.join(self.base_path, filepath)
+		fullpath = self.full_path(filepath)
 		subprocess.Popen(self.open_cmd + [fullpath], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	
+	def full_path(self, relpath):
+		return os.path.abspath(os.path.join(self.base_path, relpath))
 
