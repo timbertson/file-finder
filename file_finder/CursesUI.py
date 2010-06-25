@@ -48,6 +48,7 @@ class CursesUI(object):
 			self.finder = FileFinder(self.opt.base_path, path_filter=self.opt.path_filter, quit_indicator=QUITTING_TIME)
 			def log_scan_complete():
 				logging.warn("file scan complete")
+				self.refresh_results()
 				self.clear_status()
 			self.finder.populate(watch=self.opt.use_inotify, on_complete = log_scan_complete)
 			curses.wrapper(self._run)
@@ -74,6 +75,9 @@ class CursesUI(object):
 			else:
 				results = []
 			self.results_queue.put((query, results))
+	
+	def refresh_results(self):
+		self.set_query(self.query)
 	
 	def display_loop(self):
 		while True:
