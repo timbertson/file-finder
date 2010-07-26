@@ -1,22 +1,23 @@
 <?xml version="1.0" ?>
 <?xml-stylesheet type='text/xsl' href='interface.xsl'?>
 <interface uri="http://gfxmonk.net/dist/0install/file-finder.xml" xmlns="http://zero-install.sourceforge.net/2004/injector/interface">
-  <name>file-finder</name>
-  <summary>find files... quickly</summary>
-  <description>
-    curses-based file finder, based on gedit-open-files plugin
-  </description>
+	<name>file-finder</name>
+	<summary>find files... quickly</summary>
+	<description>
+		curses-based file finder, based on gedit-open-files plugin
+	</description>
+	<publish mode="featured" xmlns="http://gfxmonk.net/dist/0install"/>
 
-  <homepage>http://github.com/gfxmonk/file-finder</homepage>
-  <needs-terminal/>
-  <group main="finder">
-    <implementation id="sha1new=73323f6793e85192518dc4eaa39ad32b4377f78a" released="2010-06-12" version="0.1.11">
-      <manifest-digest sha256="2e5707b43e2e8678ab388c13f02729d249f6ccbe2980c9875840cceeb5d7297a"/>
-      <archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.11.tgz" size="29143"/>
-    </implementation>
-    <implementation id="sha1new=8fbbe20505be47d147ac80dff6eb9fd32f77562c" released="2010-06-25" version="0.1.12">
-      <manifest-digest sha256="7f6ae00a64058b9390ab5f4b6382810b54b099133c28f3ed09d99f30e3e48c43"/>
-      <archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.12.tgz" size="30180"/>
-    </implementation>
-  </group>
+	<homepage>http://github.com/gfxmonk/file-finder</homepage>
+	<needs-terminal/>
+	<group main="finder">
+		<implementation id="sha1new=73323f6793e85192518dc4eaa39ad32b4377f78a" released="2010-06-12" version="0.1.11">
+			<manifest-digest sha256="2e5707b43e2e8678ab388c13f02729d249f6ccbe2980c9875840cceeb5d7297a"/>
+			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.11.tgz" size="29143"/>
+		</implementation>
+		<implementation id="sha1new=8fbbe20505be47d147ac80dff6eb9fd32f77562c" released="2010-06-25" version="0.1.12">
+			<manifest-digest sha256="7f6ae00a64058b9390ab5f4b6382810b54b099133c28f3ed09d99f30e3e48c43"/>
+			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.12.tgz" size="30180"/>
+		</implementation>
+	</group>
 </interface>
