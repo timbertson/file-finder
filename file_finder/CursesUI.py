@@ -16,6 +16,7 @@ from QueueHandler import QueueHandler
 import logging
 
 MAX_RESULTS = 50
+MIN_QUERY = 3
 END = object()
 START = object()
 PREVIOUS = -1
@@ -27,6 +28,7 @@ A_INPUT = None
 A_HIGHLIGHT = None
 A_ERR = None
 A_PROMPT = None
+A_STATUS = None
 
 QUITTING_TIME = threading.Event()
 
@@ -119,7 +121,7 @@ class CursesUI(object):
 		self._input_loop()
 	
 	def _init_colors(self):
-		global A_INPUT, A_FILENAME, A_PATH, A_HIGHLIGHT, A_ERR, A_PROMPT
+		global A_INPUT, A_FILENAME, A_PATH, A_HIGHLIGHT, A_ERR, A_PROMPT, A_STATUS
 		curses.use_default_colors()
 		curses.curs_set(1) # line (input) cursor
 		A_INPUT = curses.A_REVERSE
@@ -129,18 +131,21 @@ class CursesUI(object):
 		n_hi = 3
 		n_err = 4
 		n_prompt = 5
+		n_status = 6
 		bg_index = -1
 		curses.init_pair(n_filename, curses.COLOR_WHITE, bg_index)
-		curses.init_pair(n_path, curses.COLOR_BLACK, bg_index)
+		curses.init_pair(n_path, curses.COLOR_BLUE, bg_index)
 		curses.init_pair(n_hi, curses.COLOR_GREEN, bg_index)
 		curses.init_pair(n_err, curses.COLOR_WHITE, curses.COLOR_RED)
 		curses.init_pair(n_prompt, curses.COLOR_BLUE, bg_index)
+		curses.init_pair(n_status, curses.COLOR_BLACK, bg_index)
 
 		A_FILENAME = curses.color_pair(n_filename)
 		A_PATH = curses.color_pair(n_path)
 		A_HIGHLIGHT = curses.color_pair(n_hi) | curses.A_BOLD
 		A_ERR = curses.color_pair(n_err) | curses.A_BOLD
 		A_PROMPT = curses.color_pair(n_prompt)
+		A_STATUS = curses.color_pair(n_status)
 
 	def _init_screens(self):
 		self.win_height, self.win_width = self.mainscr.getmaxyx()
@@ -211,12 +216,12 @@ class CursesUI(object):
 			linepos += 1
 			if linepos >= MAX_RESULTS:
 				break
-		if linepos == 0 and len(self.query) > 0 and self.query_queue.empty():
+		if linepos == 0 and len(self.query) >= MIN_QUERY and self.query_queue.empty():
 			self.results_win.insnstr(linepos, indent_width, 'No Matches...', self.win_width - indent_width, A_ERR)
 	
 	def draw_status(self):
 		self.status_win.clear()
-		self.status_win.insnstr(0, 0, self.status, self.win_width, A_PATH)
+		self.status_win.insnstr(0, 0, self.status, self.win_width, A_STATUS)
 	
 	def with_selected(self, func):
 		index = self.selected
@@ -246,7 +251,8 @@ class CursesUI(object):
 		self.ui_lock.release()
 	
 	def set_query(self, new_query):
-		self.query_queue.put(new_query)
+		if len(new_query) >= MIN_QUERY:
+			self.query_queue.put(new_query)
 		self.ui_lock.acquire()
 		self.query = new_query
 		if self.input_position > len(self.query):
