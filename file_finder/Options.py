@@ -22,6 +22,8 @@ class Options(object):
 		parser.add_option('-b', '--basic', dest='basic',
 			action='store_true',
 			help='basic mode (no curses UI)')
+		parser.add_option('-x', '--exclude', action='append',
+			default=[], help='add an exclude')
 
 		(options, args) = parser.parse_args()
 		self.verbose = options.verbose
@@ -34,6 +36,7 @@ class Options(object):
 		self.open_cmd = options.open_cmd.split()
 		self.use_inotify = not options.no_watch
 		self.path_filter = PathFilter()
+		map(self.path_filter.add_exclude, options.exclude)
 		self.basic = options.basic
 		if len(args) == 1:
 			self.base_path = args[0]

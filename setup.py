@@ -4,7 +4,7 @@ from setuptools import *
 
 setup(
 	name='file-finder',
-	version='__version__',
+	version='0.1.14',
 	description='find and open files quickly',
 	author='Tim Cuthbertson',
 	author_email='tim3d.junk+findfiles@gmail.com',

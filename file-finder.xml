@@ -19,5 +19,13 @@
 			<manifest-digest sha256="7f6ae00a64058b9390ab5f4b6382810b54b099133c28f3ed09d99f30e3e48c43"/>
 			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.12.tgz" size="30180"/>
 		</implementation>
+		<implementation id="sha1new=3abe5be57a7d7f51e354f4cd22bded4bd43e1076" released="2010-09-16" version="0.1.13">
+    <manifest-digest sha256="d807f72c04d38c9e67919460f472f4e5a68907fc86fecfa7faea2e529f617dfd"/>
+    <archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.13.tgz" size="30326"/>
+  </implementation>
+		<implementation id="sha1new=5994138e7fcc2dc3c95900df41b6065a9e29c1be" released="2010-09-20" version="0.1.14">
+    <manifest-digest sha256="3ff3349f8fc60d9761d6b1db9bf044638df49756fad75a1fe3a2d204057a8625"/>
+    <archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.14.tgz" size="30524"/>
+  </implementation>
 	</group>
 </interface>
