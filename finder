@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import logging
-from file_finder.Options import Options
+from file_finder.main import Options
 
 if __name__ == '__main__':
 	import sys

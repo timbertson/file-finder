@@ -8,7 +8,6 @@ import threading
 import logging
 
 from FileFinder import FileFinder
-from PathFilter import PathFilter
 from Options import Options
 from Highlight import Highlight
 

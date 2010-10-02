@@ -3,7 +3,7 @@ import logging
 import os
 import subprocess
 
-from PathFilter import PathFilter
+from path_filter import PathFilter
 
 class Options(object):
 	def configure(self):
@@ -51,7 +51,7 @@ class Options(object):
 			from Repl import Repl
 			Repl(self).run()
 		else:
-			from CursesUI import CursesUI
+			from curses_ui import CursesUI
 			CursesUI(self).run()
 			logging.debug("curses UI is finished")
 			import threading

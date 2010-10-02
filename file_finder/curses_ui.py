@@ -8,15 +8,14 @@ from time import sleep
 import threading
 from Queue import Queue, Empty
 
-from FileFinder import FileFinder
-from PathFilter import PathFilter
-from Highlight import Highlight
-from QueueHandler import QueueHandler
+from file_finder import FileFinder
+from highlight import Highlight
+from log import QueueHandler, log_exceptions
 
 import logging
 
 MAX_RESULTS = 50
-MIN_QUERY = 3
+MIN_QUERY = 2
 END = object()
 START = object()
 PREVIOUS = -1
@@ -37,25 +36,27 @@ class CursesUI(object):
 		self.opt = options
 		self.status = ""
 		self.ui_lock = threading.Lock()
-		self.query_queue = Queue()
-		self.results_queue = Queue()
 		self.status_queue = Queue()
 
 	def run(self):
 		logging.basicConfig(level=self.opt.log_level, filename='/tmp/file-finder.log')
 		rootLogger = logging.getLogger()
 		rootLogger.addHandler(QueueHandler(self.status_queue, level=logging.INFO))
-		logging.info("scanning directory ...")
+		logging.info("scanning ...")
 		def _doit():
-			self.finder = FileFinder(self.opt.base_path, path_filter=self.opt.path_filter, quit_indicator=QUITTING_TIME)
-			def log_scan_complete():
-				logging.warn("file scan complete")
-				self.refresh_results()
-				self.clear_status()
-			self.finder.populate(watch=self.opt.use_inotify, on_complete = log_scan_complete)
-			curses.wrapper(self._run)
+			try:
+				self.finder = FileFinder(self.opt.base_path, path_filter=self.opt.path_filter, quit_indicator=QUITTING_TIME)
+				def log_scan_complete():
+					logging.warn("teh fark?")
+					logging.warn("file scan complete")
+					self.refresh_results()
+					self.clear_status()
+				self.finder.populate()
+				curses.wrapper(self._run)
+			finally:
+				QUITTING_TIME.set()
 
-		work_thread = threading.Thread(target=_doit, name="Curses master")
+		work_thread = threading.Thread(target=log_exceptions(_doit), name="[curses] master")
 		work_thread.start()
 		# the main thread is just going to wait till someone tells it to quit
 		try:
@@ -65,30 +66,19 @@ class CursesUI(object):
 			# to receive KeyboardInterrupt !
 			QUITTING_TIME.set()
 	
-	def search_loop(self):
-		while True:
-			query = self.query_queue.get()
-			try:
-				query = self.query_queue.get(timeout=0.1)
-			except Empty: pass
-			logging.debug("searching: %r" % (query))
-			if query:
-				results = self.finder.find(query)
-			else:
-				results = []
-			self.results_queue.put((query, results))
-	
 	def refresh_results(self):
 		self.set_query(self.query)
 	
-	def display_loop(self):
+	@log_exceptions
+	def results_loop(self):
 		while True:
-			query, results = self.results_queue.get()
+			query, results = self.finder.results()
 			self.ui_lock.acquire()
 			self.set_results(results, query)
 			self.update()
 			self.ui_lock.release()
 	
+	@log_exceptions
 	def status_loop(self):
 		def _stat(msg):
 			self.ui_lock.acquire()
@@ -96,10 +86,15 @@ class CursesUI(object):
 			self.update()
 			self.ui_lock.release()
 		while True:
-			status_msg = self.status_queue.get()
-			_stat(status_msg)
-			sleep(0.8)
+			try:
+				status_msg = self.status_queue.get(timeout=1.2)
+				_stat(status_msg)
+				sleep(1)
+			except Empty: pass
+			if self.status_queue.empty():
+				_stat("%s files indexed" % (self.finder.file_count,))
 
+	@log_exceptions
 	def _run(self, mainscr):
 		self.mainscr = mainscr
 		self._init_colors()
@@ -107,18 +102,17 @@ class CursesUI(object):
 		self._init_input()
 		self.update()
 
-		display_thread = threading.Thread(target=self.display_loop, name="Curses display")
-		search_thread = threading.Thread(target=self.search_loop, name="Curses search")
-		status_thread = threading.Thread(target=self.status_loop, name="Curses status")
+		display_thread = threading.Thread(target=self.results_loop, name="[curses] results handler")
+		status_thread = threading.Thread(target=self.status_loop, name="[curses] status updater")
 		display_thread.daemon = True
-		search_thread.daemon = True
 		status_thread.daemon = True
 
 		display_thread.start()
-		search_thread.start()
 		status_thread.start()
 
 		self._input_loop()
+		import time
+		time.sleep(0.1) # random sleep, otherwise curses sometimes calls knickers.twist()
 	
 	def _init_colors(self):
 		global A_INPUT, A_FILENAME, A_PATH, A_HIGHLIGHT, A_ERR, A_PROMPT, A_STATUS
@@ -216,7 +210,7 @@ class CursesUI(object):
 			linepos += 1
 			if linepos >= MAX_RESULTS:
 				break
-		if linepos == 0 and len(self.query) >= MIN_QUERY and self.query_queue.empty():
+		if linepos == 0 and len(self.query) >= MIN_QUERY and not self.finder.has_pending_queries:
 			self.results_win.insnstr(linepos, indent_width, 'No Matches...', self.win_width - indent_width, A_ERR)
 	
 	def draw_status(self):
@@ -252,7 +246,7 @@ class CursesUI(object):
 	
 	def set_query(self, new_query):
 		if len(new_query) >= MIN_QUERY:
-			self.query_queue.put(new_query)
+			self.finder.find(new_query)
 		self.ui_lock.acquire()
 		self.query = new_query
 		if self.input_position > len(self.query):
@@ -373,11 +367,11 @@ class CursesUI(object):
 			logging.debug("input loop begins")
 			while self._input_iteration(): pass
 		except (KeyboardInterrupt, EOFError):
-			logging.info("exiting...")
+			logging.debug("exiting...")
 		except Exception:
 			import traceback
 			logging.error(traceback.format_exc())
 		finally:
-			logging.debug("setting quit flag")
+			logging.debug("input loop: setting quit flag")
 			QUITTING_TIME.set()
 
