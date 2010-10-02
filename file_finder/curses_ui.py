@@ -46,11 +46,6 @@ class CursesUI(object):
 		def _doit():
 			try:
 				self.finder = FileFinder(self.opt.base_path, path_filter=self.opt.path_filter, quit_indicator=QUITTING_TIME)
-				def log_scan_complete():
-					logging.warn("teh fark?")
-					logging.warn("file scan complete")
-					self.refresh_results()
-					self.clear_status()
 				self.finder.populate()
 				curses.wrapper(self._run)
 			finally:
@@ -80,6 +75,7 @@ class CursesUI(object):
 	
 	@log_exceptions
 	def status_loop(self):
+		if(QUITTING_TIME.is_set()): return
 		def _stat(msg):
 			self.ui_lock.acquire()
 			self.status = msg
@@ -112,7 +108,7 @@ class CursesUI(object):
 
 		self._input_loop()
 		import time
-		time.sleep(0.1) # random sleep, otherwise curses sometimes calls knickers.twist()
+		#time.sleep(0.1) # random sleep, otherwise curses sometimes calls knickers.twist()
 	
 	def _init_colors(self):
 		global A_INPUT, A_FILENAME, A_PATH, A_HIGHLIGHT, A_ERR, A_PROMPT, A_STATUS
@@ -247,6 +243,8 @@ class CursesUI(object):
 	def set_query(self, new_query):
 		if len(new_query) >= MIN_QUERY:
 			self.finder.find(new_query)
+		else:
+			self.finder.find(None)
 		self.ui_lock.acquire()
 		self.query = new_query
 		if self.input_position > len(self.query):
@@ -290,12 +288,12 @@ class CursesUI(object):
 	
 	def flash(self, str):
 		self.status_queue.put(str)
-		self.status_queue.put("")
 	
 	def clear_status(self):
 		self.status_queue.put("")
 
 	def _redraw(self, *screens):
+		if QUITTING_TIME.is_set(): return
 		logging.debug("redrawing...")
 		if not screens:
 			screens = self.screens

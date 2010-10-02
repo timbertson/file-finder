@@ -14,7 +14,6 @@ def log_exceptions(func):
 		try:
 			return func(*a, **kw)
 		except Exception, e:
-			print repr(e)
 			logging.exception("error in thread [%s]" % (threading.current_thread().name,))
 	return _
 

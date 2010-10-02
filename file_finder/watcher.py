@@ -4,16 +4,14 @@ import re
 import Queue as queue
 import logging
 
-from pyinotify import WatchManager, ThreadedNotifier, ProcessEvent
-
 try:
-	# Supports < pyinotify 0.8.6
-	from pyinotify import EventsCodes
-	EVENT_MASK = EventsCodes.IN_DELETE | EventsCodes.IN_CREATE | EventsCodes.IN_MOVED_TO | EventsCodes.IN_MOVED_FROM # watched events
-except AttributeError:
-	# Support for pyinotify 0.8.6
+	from pyinotify import WatchManager, ThreadedNotifier, ProcessEvent
 	from pyinotify import IN_DELETE, IN_CREATE, IN_MOVED_FROM, IN_MOVED_TO
 	EVENT_MASK = IN_DELETE | IN_CREATE | IN_MOVED_TO | IN_MOVED_FROM
+except ImportError:
+	# looks like no inotify available
+	logging.warn("no inotify available - updates will be ignored")
+	from fake_inotify import *
 
 class AddFileEvent(object):
 	def __init__(self, path, name):
@@ -35,12 +33,13 @@ class TreeWatcher(object):
 		# Add a watch to the root of the dir
 		self._watch_manager = WatchManager()
 		self._processor = FileProcessEvent(event_queue=event_queue, directory_queue=self._dir_queue, root=self._root)
-		self._notifier = ThreadedNotifier(self._watch_manager, self._processor)
-		self._notifier.name = "[inotify] notifier"
-		self._notifier.daemon = True
-		self._notifier.start()
+		notifier = ThreadedNotifier(self._watch_manager, self._processor)
+		notifier.name = "[inotify] notifier"
+		notifier.daemon = True
+		notifier.start()
 		self._ignored_dir_res = ignored_dir_regexes
 
+	def run_forever(self):
 		# initial walk
 		self.add_dir(self._root)
 		self._watch_queue()
@@ -72,17 +71,18 @@ class TreeWatcher(object):
 		From a give root of a tree this method will walk through every branch
 		and return a generator.
 		"""
-		logging.debug("walking %s" % (root,))
 		if os.path.isdir(root):
-			names = os.listdir(root)
-			for name in names:
-				try:
-					if os.path.isdir(os.path.join(root, name)):
-						self._dir_queue.put((os.path.join(root, name), True))
-					else:
-						self.add_file(root, name)
-				except os.error:
-					continue
+			logging.debug("walking %s" % (root,))
+			try:
+				names = os.listdir(root)
+				for name in names:
+					try:
+						if os.path.isdir(os.path.join(root, name)):
+							self._dir_queue.put((os.path.join(root, name), True))
+						else:
+							self.add_file(root, name)
+					except os.error: continue
+			except os.error: pass
 
 
 class Event(object):
@@ -137,7 +137,7 @@ class FileProcessEvent(ProcessEvent):
 	
 	def relative_path(self, path):
 		if path.startswith(self._root):
-			return path[len(self._root)+1:]
+			return path[len(self._root):].lstrip(os.path.sep)
 		else:
 			logging.warn("non-relative path encountered: %s" % (path,))
 		return path
@@ -156,7 +156,6 @@ if __name__ == '__main__':
 	def run():
 		while True:
 			item = event_queue.get()
-			print repr(item)
 
 	main = threading.Thread(target=run)
 	main.daemon = True

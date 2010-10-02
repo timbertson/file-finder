@@ -9,8 +9,14 @@ def adapt_str(s):
 sqlite3.register_adapter(str, adapt_str)
 
 class DB(object):
-	def __init__(self, event_queue, query_queue, results_queue, path_filter):
-		self.file_count = 0
+	def __init__(self, event_queue, query_queue, results_queue, path_filter, file_count=None):
+		if file_count is None:
+			# it's not that important...
+			class ObjectWithValue(object):
+				def __init__(self, val): self.value = val
+			file_count = ObjectWithValue(0)
+
+		self._file_count = file_count
 		self.event_queue = event_queue
 		self.query_queue = query_queue
 		self.path_filter = path_filter
@@ -31,9 +37,15 @@ class DB(object):
 		db_thread.daemon = True
 		db_thread.start()
 
+	@property
+	def file_count(self):
+		return self._file_count.value
+	def _add_file_count(self, n):
+		self._file_count.value += n
+
 	# poll_events and poll_query each look at their respective queues.
-	# When they have something, they acquire the "db" lock and add their desired action
-	# to the fsingle-size db queue. This causes the db thread to execute the action.
+	# When they have something, they add their desired action to the
+	# single-size db queue. This causes the db thread to execute the action.
 	def poll_events(self):
 		while True:
 			event = self.event_queue.get()
@@ -102,14 +114,15 @@ class DB(object):
 		self.dbqueue.put(action)
 
 	def add_file(self, path, name):
-		self.file_count += 1
+		self._add_file_count(1)
 		self.execute("INSERT INTO files (name, path) VALUES (?, ?)",
 			(name, path))
 
 	def remove_file(self, path):
-		self.file_count -= 1
+		self._add_file_count(-1)
 		self.execute("DELETE FROM files where path = ?", (path, ))
 
 	def remove_dir(self, path):
-		self.file_count -= self.execute("DELETE FROM files WHERE path like ?", (path+"%", ), return_count=True)
+		files_deleted = self.execute("DELETE FROM files WHERE path like ?", (path+"%", ), return_count=True)
+		self._add_file_count(-files_deleted)
 

@@ -48,7 +48,7 @@ class Options(object):
 	
 	def main(self):
 		if self.basic:
-			from Repl import Repl
+			from repl import Repl
 			Repl(self).run()
 		else:
 			from curses_ui import CursesUI

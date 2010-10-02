@@ -11,6 +11,10 @@
 	<homepage>http://github.com/gfxmonk/file-finder</homepage>
 	<needs-terminal/>
 	<group main="finder">
+		<requires interface="http://gfxmonk.net/dist/0install/pyinotify.xml">
+			<environment insert="python2" mode="prepend" name="PYTHONPATH"/>
+			<version not-before="0.8.6"/>
+		</requires>
 		<implementation id="sha1new=73323f6793e85192518dc4eaa39ad32b4377f78a" released="2010-06-12" version="0.1.11">
 			<manifest-digest sha256="2e5707b43e2e8678ab388c13f02729d249f6ccbe2980c9875840cceeb5d7297a"/>
 			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.11.tgz" size="29143"/>
@@ -20,12 +24,18 @@
 			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.12.tgz" size="30180"/>
 		</implementation>
 		<implementation id="sha1new=3abe5be57a7d7f51e354f4cd22bded4bd43e1076" released="2010-09-16" version="0.1.13">
-    <manifest-digest sha256="d807f72c04d38c9e67919460f472f4e5a68907fc86fecfa7faea2e529f617dfd"/>
-    <archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.13.tgz" size="30326"/>
-  </implementation>
+		<manifest-digest sha256="d807f72c04d38c9e67919460f472f4e5a68907fc86fecfa7faea2e529f617dfd"/>
+		<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.13.tgz" size="30326"/>
+	</implementation>
 		<implementation id="sha1new=5994138e7fcc2dc3c95900df41b6065a9e29c1be" released="2010-09-20" version="0.1.14">
-    <manifest-digest sha256="3ff3349f8fc60d9761d6b1db9bf044638df49756fad75a1fe3a2d204057a8625"/>
-    <archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.14.tgz" size="30524"/>
+		<manifest-digest sha256="3ff3349f8fc60d9761d6b1db9bf044638df49756fad75a1fe3a2d204057a8625"/>
+		<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.14.tgz" size="30524"/>
+	</implementation>
+		<implementation id="sha1new=ed9fbf962aa06edf2af98511c9fe707a0d796cf3" released="2010-10-03" version="0.1.15">
+    <manifest-digest sha256="2f69d3c7e966dff14c43971421e4d27b6c6c5947e36633e31923a5662311af35"/>
+    <archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.15.tgz" size="31214"/>
   </implementation>
+		<implementation id="." released="2010-10-03" version="0.1.15"/>
 	</group>
+
 </interface>

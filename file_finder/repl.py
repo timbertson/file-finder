@@ -7,9 +7,8 @@ import threading
 
 import logging
 
-from FileFinder import FileFinder
-from Options import Options
-from Highlight import Highlight
+from file_finder import FileFinder
+from highlight import Highlight
 
 try:
 	from termstyle import green, cyan, blue, yellow, black, auto
@@ -38,7 +37,6 @@ class Repl(object):
 		subprocess.call(['clear'])
 		self.found_files = []
 		i = 0
-		bits = query_string.split()
 		highlight = self.highlight_func(query_string)
 		for filename, fullpath in result_iter:
 			self.found_files.append(fullpath)
@@ -48,7 +46,7 @@ class Repl(object):
 				explanation = "(in %s)" % (relpath,)
 			index = str(i+1).rjust(2)
 			filename = filename.ljust(30)
-			print " %s%s   %s %s" % (yellow(index), black(":"), highlight(filename), black(explanation))
+			print " %s%s   %s %s" % (yellow(index), yellow(":"), highlight(filename), black(explanation))
 			i += 1
 		
 	def open(self, index):
@@ -70,7 +68,8 @@ class Repl(object):
 		if index is not None:
 			self.open(index)
 		else:
-			results = self.finder.find(q)
+			self.finder.find(q)
+			query, results = self.finder.results()
 			self.summarise(results, q)
 
 	def run(self):
@@ -89,7 +88,7 @@ class Repl(object):
 	def _run(self):
 		self.finder = FileFinder(self.opt.base_path, path_filter=self.opt.path_filter, quit_indicator=QUITTING_TIME)
 		logging.info("getting file list...")
-		self.finder.populate(watch=self.opt.use_inotify)
+		self.finder.populate()
 		try:
 			while True:
 				self._loop()
