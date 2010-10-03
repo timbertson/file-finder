@@ -2,16 +2,18 @@
 <?xml-stylesheet type='text/xsl' href='interface.xsl'?>
 <interface uri="http://gfxmonk.net/dist/0install/file-finder.xml" xmlns="http://zero-install.sourceforge.net/2004/injector/interface">
 	<name>file-finder</name>
-	<summary>find files... quickly</summary>
-	<description>
-		curses-based file finder, based on gedit-open-files plugin
-	</description>
-	<publish mode="featured" xmlns="http://gfxmonk.net/dist/0install"/>
+	<summary>.</summary>
 	<feed-for interface="http://gfxmonk.net/dist/0install/file-finder.xml" />
-
-	<homepage>http://github.com/gfxmonk/file-finder</homepage>
 	<needs-terminal/>
 	<group main="finder">
+		<requires interface="http://gfxmonk.net/dist/0install/pyinotify.xml">
+			<environment insert="python2" mode="prepend" name="PYTHONPATH"/>
+			<version not-before="0.8.6"/>
+		</requires>
+		<requires interface="http://gfxmonk.net/dist/0install/python-termstyle.xml">
+			<environment insert="" mode="prepend" name="PYTHONPATH"/>
+		</requires>
+
 		<implementation id="." version="0.1-pre">
 		</implementation>
 	</group>
