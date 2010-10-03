@@ -4,17 +4,28 @@
 	<name>file-finder</name>
 	<summary>find files... quickly</summary>
 	<description>
-		curses-based file finder, based on gedit-open-files plugin
+curses-based file finder, based on gedit-open-files plugin
+
+CONFIGURATION:
+--------------
+global ignore patterns can be placed in ~/.config/file-finder/ignore
+one pattern per line. Ignore patterns use '*' as a wildcard, and can match
+files or directories.
 	</description>
 	<publish mode="featured" xmlns="http://gfxmonk.net/dist/0install"/>
 
 	<homepage>http://github.com/gfxmonk/file-finder</homepage>
 	<needs-terminal/>
 	<group main="finder">
+
 		<requires interface="http://gfxmonk.net/dist/0install/pyinotify.xml">
 			<environment insert="python2" mode="prepend" name="PYTHONPATH"/>
 			<version not-before="0.8.6"/>
 		</requires>
+		<requires interface="http://gfxmonk.net/dist/0install/python-termstyle.xml">
+			<environment insert="" mode="prepend" name="PYTHONPATH"/>
+		</requires>
+
 		<implementation id="sha1new=73323f6793e85192518dc4eaa39ad32b4377f78a" released="2010-06-12" version="0.1.11">
 			<manifest-digest sha256="2e5707b43e2e8678ab388c13f02729d249f6ccbe2980c9875840cceeb5d7297a"/>
 			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.11.tgz" size="29143"/>
@@ -35,7 +46,6 @@
     <manifest-digest sha256="2f69d3c7e966dff14c43971421e4d27b6c6c5947e36633e31923a5662311af35"/>
     <archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.15.tgz" size="31214"/>
   </implementation>
-		<implementation id="." released="2010-10-03" version="0.1.15"/>
 	</group>
 
 </interface>

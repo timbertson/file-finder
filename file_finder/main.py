@@ -5,6 +5,8 @@ import subprocess
 
 from path_filter import PathFilter
 
+ignore_path = os.path.expanduser(os.environ.get("FILE_FINDER_IGNORE", "~/.config/file-finder/ignore"))
+
 class Options(object):
 	def configure(self):
 		usage = "finder [base_path]"
@@ -37,6 +39,7 @@ class Options(object):
 		self.use_inotify = not options.no_watch
 		self.path_filter = PathFilter()
 		map(self.path_filter.add_exclude, options.exclude)
+		self.load_user_excludes()
 		self.basic = options.basic
 		if len(args) == 1:
 			self.base_path = args[0]
@@ -46,6 +49,15 @@ class Options(object):
 			parser.error("incorrect number of arguments")
 		return self
 	
+	def load_user_excludes(self):
+		try:
+			with open(ignore_path) as ignore_file:
+				strip = lambda x: x.strip()
+				valid = lambda x: x and not x.startswith('#')
+				ignore_lines = filter(valid, map(strip, ignore_file.readlines()))
+			map(self.path_filter.add_exclude, ignore_lines)
+		except IOError: pass
+
 	def main(self):
 		if self.basic:
 			from repl import Repl
