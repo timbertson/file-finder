@@ -42,9 +42,9 @@ files or directories.
 		<manifest-digest sha256="3ff3349f8fc60d9761d6b1db9bf044638df49756fad75a1fe3a2d204057a8625"/>
 		<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.14.tgz" size="30524"/>
 	</implementation>
-		<implementation id="sha1new=ed9fbf962aa06edf2af98511c9fe707a0d796cf3" released="2010-10-03" version="0.1.15">
-    <manifest-digest sha256="2f69d3c7e966dff14c43971421e4d27b6c6c5947e36633e31923a5662311af35"/>
-    <archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.15.tgz" size="31214"/>
+		<implementation id="sha1new=d7cd16f112e289beb3b5f59a0b2821e5ea7af11c" released="2010-10-04" version="0.1.15">
+    <manifest-digest sha256="4c2e453159f7a917da66764cb794086afe46b25fd0acca4fbae77ec6d765b4ea"/>
+    <archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.15.tgz" size="32025"/>
   </implementation>
 	</group>
 

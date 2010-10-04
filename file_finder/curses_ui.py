@@ -37,6 +37,8 @@ class CursesUI(object):
 		self.status = ""
 		self.ui_lock = threading.Lock()
 		self.status_queue = Queue()
+		self._num_files = 0
+		self.query = None
 
 	def run(self):
 		logging.basicConfig(level=self.opt.log_level, filename='/tmp/file-finder.log')
@@ -88,7 +90,20 @@ class CursesUI(object):
 				sleep(1)
 			except Empty: pass
 			if self.status_queue.empty():
-				_stat("%s files indexed" % (self.finder.file_count,))
+				num_files = self.update_files_indexed()
+				_stat("%s files indexed" % (num_files,))
+	
+	def update_files_indexed(self):
+		new_num_files = self.finder.file_count
+		if self._num_files != new_num_files:
+			self.requery_if_doing_nothing()
+		self._num_files = new_num_files
+		return new_num_files
+
+	def requery_if_doing_nothing(self):
+		if not self.finder.has_pending_queries:
+			logging.debug("resubmitting query: %s" % (self.query,))
+			self.set_query(self.query)
 
 	@log_exceptions
 	def _run(self, mainscr):
