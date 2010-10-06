@@ -11,6 +11,7 @@ from Queue import Queue, Empty
 from file_finder import FileFinder
 from highlight import Highlight
 from log import QueueHandler, log_exceptions
+from search import Search
 
 import logging
 
@@ -69,9 +70,9 @@ class CursesUI(object):
 	@log_exceptions
 	def results_loop(self):
 		while True:
-			query, results = self.finder.results()
+			search = self.finder.results()
 			self.ui_lock.acquire()
-			self.set_results(results, query)
+			self.set_results(search)
 			self.update()
 			self.ui_lock.release()
 	
@@ -103,7 +104,7 @@ class CursesUI(object):
 	def requery_if_doing_nothing(self):
 		if not self.finder.has_pending_queries:
 			logging.debug("resubmitting query: %s" % (self.query,))
-			self.set_query(self.query)
+			self.set_query(self.query, is_repeat = True)
 
 	@log_exceptions
 	def _run(self, mainscr):
@@ -255,9 +256,9 @@ class CursesUI(object):
 		self.selected = max(self.selected, 0)
 		self.ui_lock.release()
 	
-	def set_query(self, new_query):
+	def set_query(self, new_query, is_repeat = False):
 		if len(new_query) >= MIN_QUERY:
-			self.finder.find(new_query)
+			self.finder.find(Search(new_query, is_repeat=is_repeat))
 		else:
 			self.finder.find(None)
 		self.ui_lock.acquire()
@@ -266,10 +267,13 @@ class CursesUI(object):
 			self.input_position = len(self.query)
 		self.ui_lock.release()
 	
-	def set_results(self, results, query):
-		self.highlight = Highlight(query)
-		self.results = list(results)
-		self.selected = 0
+	def set_results(self, search):
+		self.highlight = Highlight(search.text)
+		self.results = list(search.results)
+		if search.is_repeat:
+			self.selected = min(self.selected, len(self.results)-1)
+		else:
+			self.selected = 0
 
 	def add_char(self, ch):
 		new_query = self.modify_query_as_list(lambda q: q.insert(self.input_position, ch))

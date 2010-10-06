@@ -1,10 +1,15 @@
 #!/usr/bin/env python
 
+## NOTE: ##
+## setup.py is not maintained, and is only provided for convenience.
+## please see http://gfxmonk.net/dist/0install/index/ for
+## up-to-date installable packages.
+
 from setuptools import *
 
 setup(
 	name='file-finder',
-	version='0.1.15',
+	version='0.1.16',
 	description='find and open files quickly',
 	author='Tim Cuthbertson',
 	author_email='tim3d.junk+findfiles@gmail.com',

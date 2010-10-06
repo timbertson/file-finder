@@ -46,6 +46,10 @@ files or directories.
     <manifest-digest sha256="4c2e453159f7a917da66764cb794086afe46b25fd0acca4fbae77ec6d765b4ea"/>
     <archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.15.tgz" size="32025"/>
   </implementation>
+		<implementation id="sha1new=32eccf02b5ad10856bbae8b999df2ec8fa5d2eab" released="2010-10-06" version="0.1.16">
+    <manifest-digest sha256="59d8baad9e814abc274b5e9e5ed3819900492efc04c5d87852724e6ed2cf5323"/>
+    <archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.16.tgz" size="32619"/>
+  </implementation>
 	</group>
 
 </interface>

@@ -3,13 +3,14 @@ import logging
 import Queue as queue
 import sqlite3
 from log import log_exceptions
+from search import Search
 
 def adapt_str(s):
 	return s.decode("iso-8859-1")
 sqlite3.register_adapter(str, adapt_str)
 
 class DB(object):
-	def __init__(self, event_queue, query_queue, results_queue, path_filter, file_count=None):
+	def __init__(self, event_queue, search_queue, results_queue, path_filter, file_count=None):
 		if file_count is None:
 			# it's not that important...
 			class ObjectWithValue(object):
@@ -18,16 +19,16 @@ class DB(object):
 
 		self._file_count = file_count
 		self.event_queue = event_queue
-		self.query_queue = query_queue
+		self.search_queue = search_queue
 		self.path_filter = path_filter
 		self.results_queue = results_queue
 		self.dblock = threading.Lock()
 
 		self.dbqueue = queue.Queue(maxsize=1)
 
-		query_thread = threading.Thread(target=log_exceptions(self.poll_query), name="[db] find handler")
-		query_thread.daemon = True
-		query_thread.start()
+		search_thread = threading.Thread(target=log_exceptions(self.poll_search), name="[db] find handler")
+		search_thread.daemon = True
+		search_thread.start()
 
 		file_thread = threading.Thread(target=log_exceptions(self.poll_events), name="[db] file event handler")
 		file_thread.daemon = True
@@ -43,7 +44,7 @@ class DB(object):
 	def _add_file_count(self, n):
 		self._file_count.value += n
 
-	# poll_events and poll_query each look at their respective queues.
+	# poll_events and poll_search each look at their respective queues.
 	# When they have something, they add their desired action to the
 	# single-size db queue. This causes the db thread to execute the action.
 	def poll_events(self):
@@ -51,15 +52,19 @@ class DB(object):
 			event = self.event_queue.get()
 			self.dbqueue.put(lambda event=event: self.process_event(event))
 	
-	def poll_query(self):
+	def poll_search(self):
 		while True:
-			query = self.query_queue.get()
+			search = self.search_queue.get()
 			# empty the queue; old queries are useless
 			try:
 				while True:
-					query = self.query_queue.get_nowait()
+					search = self.search_queue.get_nowait()
 			except queue.Empty: pass
-			self.dbqueue.put(lambda query=query: self.results_queue.put((query, self.find(query))))
+			self.dbqueue.put(lambda search=search: self._perform(search))
+
+	def _perform(self, search):
+		search.results = self.find(search.text)
+		self.results_queue.put(search)
 
 	def poll_db(self):
 		self._create_db()

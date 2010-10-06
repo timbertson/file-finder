@@ -9,6 +9,7 @@ import logging
 
 from file_finder import FileFinder
 from highlight import Highlight
+from search import Search
 
 try:
 	from termstyle import green, cyan, blue, yellow, black, auto
@@ -68,9 +69,9 @@ class Repl(object):
 		if index is not None:
 			self.open(index)
 		else:
-			self.finder.find(q)
-			query, results = self.finder.results()
-			self.summarise(results, q)
+			self.finder.find(Search(q))
+			search = self.finder.results()
+			self.summarise(search.results, search.text)
 
 	def run(self):
 		logging.basicConfig(level=self.opt.log_level)

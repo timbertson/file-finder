@@ -6,16 +6,17 @@ from log import log_exceptions
 from multiprocessing import Queue as MPQueue
 from multiprocessing import Process, Value
 from watcher import TreeWatcher
-
-EMPTY_RESULTS = '',()
-
+from search import Search
 from db import DB
+
+EMPTY_RESULTS = Search('')
+EMPTY_RESULTS.results = []
 
 class FileFinder(object):
 	def __init__(self, basepath, path_filter, quit_indicator):
 		self.quit_indicator = quit_indicator
 		self.event_queue = Queue(maxsize=50)
-		self.query_queue = MPQueue()
+		self.search_queue = MPQueue()
 		self.results_queue = MPQueue()
 		if not basepath.endswith(os.path.sep):
 			basepath = basepath + os.path.sep
@@ -32,7 +33,7 @@ class FileFinder(object):
 	def _poll(self, *a):
 		db = DB(
 				event_queue=self.event_queue,
-				query_queue=self.query_queue,
+				search_queue=self.search_queue,
 				results_queue=self.results_queue,
 				path_filter=self.path_filter,
 				file_count = self._file_count)
@@ -41,13 +42,13 @@ class FileFinder(object):
 	
 	@property
 	def has_pending_queries(self):
-		return not self.query_queue.empty()
+		return not self.search_queue.empty()
 
-	def find(self, query):
-		if not query:
+	def find(self, search):
+		if not search:
 			self.results_queue.put(EMPTY_RESULTS)
 		else:
-			self.query_queue.put(query)
+			self.search_queue.put(search)
 	
 	def results(self, blocking=True):
 		try:
