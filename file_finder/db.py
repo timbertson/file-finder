@@ -102,10 +102,27 @@ class DB(object):
 			query = query.replace('/', ' ')
 		else:
 			query_type = 'name'
-		query_param = "%%%s%%" % (query.replace(" ", "%"),)
-		res = self.execute("SELECT DISTINCT name, path FROM files " +
-			"WHERE %s LIKE ? ORDER BY length(path), name LIMIT 51" % (query_type,), (query_param,))
+
+		query_param = self._format_like_statement(query)
+
+		sql = ("SELECT DISTINCT name, path FROM files " +
+		      "WHERE %s LIKE ? escape '\\' ORDER BY length(path), name LIMIT 51" % (query_type,))
+		logging.debug("%s :: %s" % (sql, query_param))
+		res = self.execute(sql, (query_param,))
 		return list(res)
+	
+	def _format_like_statement(self, query):
+		# psuedo-regexp anchoring
+		prefix = '' if query.startswith('^') else '%'
+		suffix = '' if query.endswith('$')   else '%'
+
+		query = query.rstrip('$').lstrip('^')
+		query = query.replace('_', '\\_')
+		query = query.replace('%', '\\%')
+		wildcarded_query = query.replace(" ", "%")
+		query_param = "%s%s%s" % (prefix, wildcarded_query, suffix)
+
+		return query_param
 
 	def _create_db(self):
 		self.db = sqlite3.connect(":memory:")

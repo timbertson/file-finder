@@ -3,6 +3,8 @@ import logging
 
 class Highlight(object):
 	def __init__(self, query):
+		query = query.rstrip('$').lstrip('^')
+
 		bits = query.replace('/',' ').split()
 		bits = sorted(bits, key=len, reverse=True)
 		bits = [bit.lower() for bit in bits]
