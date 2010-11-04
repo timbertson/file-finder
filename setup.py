@@ -9,11 +9,11 @@ from setuptools import *
 
 setup(
 	name='file-finder',
-	version='0.1.16',
+	version='0.1.18',
 	description='find and open files quickly',
 	author='Tim Cuthbertson',
 	author_email='tim3d.junk+findfiles@gmail.com',
-	url='http://github.com/gfxmonk/find-files',
+	url='http://gfxmonk.net/dist/0install/file-finder.xml',
 	packages=find_packages(exclude=["test"]),
 	
 	classifiers=[

@@ -50,6 +50,14 @@ files or directories.
     <manifest-digest sha256="8d0c764be3bc19bdb31497e6f6c712d0bafc7c1bc70a8f0346a94b55a76b00ec"/>
     <archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.16.tgz" size="32619"/>
   </implementation>
+		<implementation id="sha1new=c21810a39d5a5ca7d7e0285dbd2f89d8f7f3a1ce" released="2010-10-17" version="0.1.17">
+    <manifest-digest sha256="8fd48f48595a10f1a3ae615e7bb3190b90881ffeb42096b76c5c8a73fcf640a6"/>
+    <archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.17.tgz" size="33122"/>
+  </implementation>
+		<implementation id="sha1new=2858fc10a8263c5ba5e6d029ede7ea4c67cf1ed2" released="2010-11-05" version="0.1.18">
+    <manifest-digest sha256="0983db95e0e2ba61f93d60731238aa3834f8c30ed5fe26ab5226766079128242"/>
+    <archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.18.tgz" size="33603"/>
+  </implementation>
 	</group>
 
 </interface>
