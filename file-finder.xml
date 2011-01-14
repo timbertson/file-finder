@@ -4,28 +4,46 @@
 	<name>file-finder</name>
 	<summary>find files... quickly</summary>
 	<description>
-curses-based file finder, based on gedit-open-files plugin
+open files based on a query
+================================================================
 
-CONFIGURATION:
---------------
-global ignore patterns can be placed in ~/.config/file-finder/ignore
-one pattern per line. Ignore patterns use '*' as a wildcard, and can match
-files or directories.
+A simple console app that indexes and allows you to search for and open files.
+
+If you have inotify for python (linux only), it'll keep track of changes while it runs (so you don't need to re-index).
+If you have the python &quot;termstyle&quot; package installed, you'll get fancy coloured results, too!
+
+Dependencies
+------------
+
+Gedit Open Files is written in Python, so doesn't need compiling, however you will
+need the following runtime dependencies:
+
+  * Python 2.4 or later
+  * sqlite3
+
+The following python packages are optional (but make things more awesome):
+  * pyinotify
+  * termstyle
+
+Installation
+------------
+
+sudo easy_install file-finder
+
+Other
+-----
+
+The core code comes from vbabiy's gedit-openfiles - http://github.com/vbabiy/gedit-openfiles
+
 	</description>
 	<publish mode="featured" xmlns="http://gfxmonk.net/dist/0install"/>
-
 	<homepage>http://github.com/gfxmonk/file-finder</homepage>
 	<needs-terminal/>
 	<group main="finder">
-
 		<requires interface="http://gfxmonk.net/dist/0install/pyinotify.xml">
-			<environment insert="python2" mode="prepend" name="PYTHONPATH"/>
 			<version not-before="0.8.6"/>
 		</requires>
-		<requires interface="http://gfxmonk.net/dist/0install/python-termstyle.xml">
-			<environment insert="" mode="prepend" name="PYTHONPATH"/>
-		</requires>
-
+		<requires interface="http://gfxmonk.net/dist/0install/python-termstyle.xml"/>
 		<implementation id="sha1new=73323f6793e85192518dc4eaa39ad32b4377f78a" released="2010-06-12" version="0.1.11">
 			<manifest-digest sha256="2e5707b43e2e8678ab388c13f02729d249f6ccbe2980c9875840cceeb5d7297a"/>
 			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.11.tgz" size="29143"/>
@@ -35,29 +53,28 @@ files or directories.
 			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.12.tgz" size="30180"/>
 		</implementation>
 		<implementation id="sha1new=3abe5be57a7d7f51e354f4cd22bded4bd43e1076" released="2010-09-16" version="0.1.13">
-		<manifest-digest sha256="d807f72c04d38c9e67919460f472f4e5a68907fc86fecfa7faea2e529f617dfd"/>
-		<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.13.tgz" size="30326"/>
-	</implementation>
+			<manifest-digest sha256="d807f72c04d38c9e67919460f472f4e5a68907fc86fecfa7faea2e529f617dfd"/>
+			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.13.tgz" size="30326"/>
+		</implementation>
 		<implementation id="sha1new=5994138e7fcc2dc3c95900df41b6065a9e29c1be" released="2010-09-20" version="0.1.14">
-		<manifest-digest sha256="3ff3349f8fc60d9761d6b1db9bf044638df49756fad75a1fe3a2d204057a8625"/>
-		<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.14.tgz" size="30524"/>
-	</implementation>
+			<manifest-digest sha256="3ff3349f8fc60d9761d6b1db9bf044638df49756fad75a1fe3a2d204057a8625"/>
+			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.14.tgz" size="30524"/>
+		</implementation>
 		<implementation id="sha1new=d7cd16f112e289beb3b5f59a0b2821e5ea7af11c" released="2010-10-04" version="0.1.15">
-    <manifest-digest sha256="4c2e453159f7a917da66764cb794086afe46b25fd0acca4fbae77ec6d765b4ea"/>
-    <archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.15.tgz" size="32025"/>
-  </implementation>
+			<manifest-digest sha256="4c2e453159f7a917da66764cb794086afe46b25fd0acca4fbae77ec6d765b4ea"/>
+			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.15.tgz" size="32025"/>
+		</implementation>
 		<implementation id="sha1new=936c5bf02e92abe02cb5ca1b046ccef1d106f3f2" released="2010-10-06" version="0.1.16">
-    <manifest-digest sha256="8d0c764be3bc19bdb31497e6f6c712d0bafc7c1bc70a8f0346a94b55a76b00ec"/>
-    <archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.16.tgz" size="32619"/>
-  </implementation>
+			<manifest-digest sha256="8d0c764be3bc19bdb31497e6f6c712d0bafc7c1bc70a8f0346a94b55a76b00ec"/>
+			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.16.tgz" size="32619"/>
+		</implementation>
 		<implementation id="sha1new=c21810a39d5a5ca7d7e0285dbd2f89d8f7f3a1ce" released="2010-10-17" version="0.1.17">
-    <manifest-digest sha256="8fd48f48595a10f1a3ae615e7bb3190b90881ffeb42096b76c5c8a73fcf640a6"/>
-    <archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.17.tgz" size="33122"/>
-  </implementation>
+			<manifest-digest sha256="8fd48f48595a10f1a3ae615e7bb3190b90881ffeb42096b76c5c8a73fcf640a6"/>
+			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.17.tgz" size="33122"/>
+		</implementation>
 		<implementation id="sha1new=2858fc10a8263c5ba5e6d029ede7ea4c67cf1ed2" released="2010-11-05" version="0.1.18">
-    <manifest-digest sha256="0983db95e0e2ba61f93d60731238aa3834f8c30ed5fe26ab5226766079128242"/>
-    <archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.18.tgz" size="33603"/>
-  </implementation>
+			<manifest-digest sha256="0983db95e0e2ba61f93d60731238aa3834f8c30ed5fe26ab5226766079128242"/>
+			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.18.tgz" size="33603"/>
+		</implementation>
 	</group>
-
 </interface>
