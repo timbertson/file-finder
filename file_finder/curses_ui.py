@@ -42,7 +42,6 @@ class CursesUI(object):
 		self.query = None
 
 	def run(self):
-		logging.basicConfig(level=self.opt.log_level, filename='/tmp/file-finder.log')
 		rootLogger = logging.getLogger()
 		rootLogger.addHandler(QueueHandler(self.status_queue, level=logging.INFO))
 		logging.info("scanning ...")

@@ -1,4 +1,5 @@
-import re
+import re, os
+import logging
 
 DEFAULT_EXCLUDES = [
 	'.*',
@@ -15,13 +16,17 @@ class PathFilter(object):
 	def glob_to_regexp(self, glob):
 		parts = glob.split("*")
 		escaped_parts = map(re.escape, parts)
-		regexp = "^%s$" % ('.*'.join(escaped_parts),)
+		# matches if it's either surrounded by start/end of string or surrounded by slashes (os.path.sep)
+		regexp = "(^|%s)%s($|%s)" % (os.path.sep, '.*'.join(escaped_parts),os.path.sep)
+		logging.debug("converted %s -> %s" % (glob, regexp))
+		return regexp
 		return re.compile(regexp)
 
 	def set_excludes(self, exclude_list):
 		self.exclude_paths = map(self.glob_to_regexp, exclude_list)
 	
 	def add_exclude(self, exclude):
+		logging.debug("adding user exclude: %s" % (exclude,))
 		self.exclude_paths.append(self.glob_to_regexp(exclude))
 	
 	def set_include_files(self, include_list):
@@ -32,12 +37,13 @@ class PathFilter(object):
 	
 	def should_include(self, path, is_file=False):
 		for exclude_re in self.exclude_paths:
-			if exclude_re.match(path):
+			if re.search(exclude_re, path):
+				logging.debug("excluding %s as it matched: %s" % (path, exclude_re))
 				return False
 		if is_file and len(self.include_files) > 0:
 			file_name = os.path.basename(path)
 			for include_re in include_files:
-				if include_re.match(file_name):
+				if re.search(include_re, file_name):
 					return True
 			return False
 		else:

@@ -18,9 +18,9 @@ class Options(object):
 		parser.add_option('-v', '--verbose', dest='verbose',
 			action='store_true',
 			help='more information than you require')
-		parser.add_option('-n', '--no-watch', dest='no_watch',
-			action='store_true',
-			help="disable inotify (folder watch) support")
+		#parser.add_option('-n', '--no-watch', dest='no_watch',
+		#	action='store_true',
+		#	help="disable inotify (folder watch) support")
 		parser.add_option('-b', '--basic', dest='basic',
 			action='store_true',
 			help='basic mode (no curses UI)')
@@ -30,13 +30,19 @@ class Options(object):
 		(options, args) = parser.parse_args()
 		self.verbose = options.verbose
 		self.log_level = logging.DEBUG if options.verbose else logging.INFO
-		if not (options.verbose or options.basic):
-			# carelessly discard stdout and stderr
-			import sys
-			sys.stdout = sys.stderr = open(os.devnull, 'w')
+		if options.basic:
+			# logging to terminal is fine
+			logging.basicConfig(level=self.log_level)
+		else:
+			# terminal logging would break curses layout:
+			logging.basicConfig(level=self.log_level, filename='/tmp/file-finder.log', filemode='w')
+			if not options.verbose:
+				# carelessly discard stdout and stderr
+				import sys
+				sys.stdout = sys.stderr = open(os.devnull, 'w')
 
 		self.open_cmd = options.open_cmd.split()
-		self.use_inotify = not options.no_watch
+		#self.use_inotify = not options.no_watch
 		self.path_filter = PathFilter()
 		map(self.path_filter.add_exclude, options.exclude)
 		self.load_user_excludes()

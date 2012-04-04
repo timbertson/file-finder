@@ -1,6 +1,6 @@
-<?xml version="1.0" ?>
+<?xml version="1.0"?>
 <?xml-stylesheet type='text/xsl' href='interface.xsl'?>
-<interface uri="http://gfxmonk.net/dist/0install/file-finder.xml" xmlns="http://zero-install.sourceforge.net/2004/injector/interface">
+<interface xmlns="http://zero-install.sourceforge.net/2004/injector/interface" uri="http://gfxmonk.net/dist/0install/file-finder.xml">
 	<name>file-finder</name>
 	<summary>find files... quickly</summary>
 	<description>
@@ -10,7 +10,7 @@ open files based on a query
 A simple console app that indexes and allows you to search for and open files.
 
 If you have inotify for python (linux only), it'll keep track of changes while it runs (so you don't need to re-index).
-If you have the python &quot;termstyle&quot; package installed, you'll get fancy coloured results, too!
+If you have the python "termstyle" package installed, you'll get fancy coloured results, too!
 
 Dependencies
 ------------
@@ -36,14 +36,17 @@ Other
 The core code comes from vbabiy's gedit-openfiles - http://github.com/vbabiy/gedit-openfiles
 
 	</description>
-	<publish mode="featured" xmlns="http://gfxmonk.net/dist/0install"/>
+	<publish xmlns="http://gfxmonk.net/dist/0install" mode="featured"/>
 	<homepage>http://github.com/gfxmonk/file-finder</homepage>
 	<needs-terminal/>
 	<group main="finder">
-		<requires interface="http://gfxmonk.net/dist/0install/pyinotify.xml">
+		<runner interface="http://repo.roscidus.com/python/python" path="finder">
+			<version before="3"/>
+		</runner>
+		<requires importance="recommended" interface="http://gfxmonk.net/dist/0install/pyinotify.xml">
 			<version not-before="0.8.6"/>
 		</requires>
-		<requires interface="http://gfxmonk.net/dist/0install/python-termstyle.xml"/>
+		<requires importance="recommended" interface="http://gfxmonk.net/dist/0install/python-termstyle.xml"/>
 		<implementation id="sha1new=73323f6793e85192518dc4eaa39ad32b4377f78a" released="2010-06-12" version="0.1.11">
 			<manifest-digest sha256="2e5707b43e2e8678ab388c13f02729d249f6ccbe2980c9875840cceeb5d7297a"/>
 			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.11.tgz" size="29143"/>
@@ -76,5 +79,12 @@ The core code comes from vbabiy's gedit-openfiles - http://github.com/vbabiy/ged
 			<manifest-digest sha256="0983db95e0e2ba61f93d60731238aa3834f8c30ed5fe26ab5226766079128242"/>
 			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.1.18.tgz" size="33603"/>
 		</implementation>
+	</group>
+	<group main="finder">
+		<runner interface="http://repo.roscidus.com/python/python" path="finder">
+			<version before="3"/>
+		</runner>
+		<requires importance="recommended" interface="http://gfxmonk.net/dist/0install/watchdog.xml"/>
+		<requires importance="recommended" interface="http://gfxmonk.net/dist/0install/python-termstyle.xml"/>
 	</group>
 </interface>

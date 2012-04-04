@@ -74,7 +74,6 @@ class Repl(object):
 			self.summarise(search.results, search.text)
 
 	def run(self):
-		logging.basicConfig(level=self.opt.log_level)
 		work_thread = threading.Thread(target=self._run, name="repl")
 		work_thread.daemon = True
 		work_thread.start()

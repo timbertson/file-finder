@@ -4,14 +4,8 @@ import re
 import Queue as queue
 import logging
 
-try:
-	from pyinotify import WatchManager, ThreadedNotifier, ProcessEvent
-	from pyinotify import IN_DELETE, IN_CREATE, IN_MOVED_FROM, IN_MOVED_TO
-	EVENT_MASK = IN_DELETE | IN_CREATE | IN_MOVED_TO | IN_MOVED_FROM
-except ImportError:
-	# looks like no inotify available
-	logging.warn("no inotify available - updates will be ignored")
-	from fake_inotify import *
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler, FileCreatedEvent
 
 class AddFileEvent(object):
 	def __init__(self, path, name):
@@ -31,11 +25,11 @@ class TreeWatcher(object):
 		self._root = os.path.realpath(root)
 
 		# Add a watch to the root of the dir
-		self._watch_manager = WatchManager()
-		self._processor = FileProcessEvent(event_queue=event_queue, directory_queue=self._dir_queue, root=self._root)
-		notifier = ThreadedNotifier(self._watch_manager, self._processor)
+		self._handler = FileFinderEventHandler(event_queue=event_queue, directory_queue=self._dir_queue, root=self._root)
+		notifier = Observer()
 		notifier.name = "[inotify] notifier"
 		notifier.daemon = True
+		notifier.schedule(self._handler, self._root, recursive=True)
 		notifier.start()
 		self._ignored_dir_res = ignored_dir_regexes
 
@@ -50,21 +44,20 @@ class TreeWatcher(object):
 			if exists:
 				self.add_dir(directory)
 			else:
-				self.remove_dir(directory)
+				logging.debug("got nonexistent directory: %s" % (directory,))
 
-	def add_dir(self, path, on_complete=None):
+	def _should_skip_path(self, path):
 		for pattern in self._ignored_dir_res:
 			if re.search(pattern, path):
-				logging.debug("skipping: %s (matched %r)" % (path,pattern))
-				return
-		self._watch_manager.add_watch(path, EVENT_MASK)
-		self.walk_directory(path)
+				return True
+		return False
+
+	def add_dir(self, path):
+		if not self._should_skip_path(path):
+			self.walk_directory(path)
 
 	def add_file(self, path, name):
-		self._processor.process_IN_CREATE(AddFileEvent(path, name))
-
-	def remove_dir(self, path):
-		self._watch_manager.rm_watch(path)
+		self._handler.on_created(FileCreatedEvent(os.path.join(path,name)))
 
 	def walk_directory(self, root):
 		"""
@@ -112,42 +105,37 @@ class Event(object):
 		return os.path.join(self.base, self.name or '')
 	path = property(_get_relative_path)
 
-def handler(which, exists):
+def handler(which, exists, path_attr='src_path'):
 	def handle_event(self, event):
-		event_path = self.relative_path(event.path)
-		path = os.path.join(event_path, event.name)
-		logging.debug("event %s occurred to path %s" % (which, path))
-		if self.is_dir(event):
-			self._dir_queue.put((path, exists))
-		else:
-			self._event_queue.put(Event(base=event_path, name=event.name, event=which, exists=exists))
+		path = self.relative_path(getattr(event, path_attr))
+		if not self.is_dir(event):
+			logging.debug("event %s occurred to path %s" % (which, path))
+			base, name = os.path.split(path)
+			self._event_queue.put(Event(base=base, name=name, event=which, exists=exists))
 	return handle_event
 
-class FileProcessEvent(ProcessEvent):
+class FileFinderEventHandler(FileSystemEventHandler):
 	def __init__(self, event_queue, directory_queue, root):
 		self._event_queue = event_queue
-		self._dir_queue = directory_queue
 		self._root = root
-	
+
 	def is_dir(self, event):
-		if hasattr(event, "dir"):
-			return event.dir
-		else:
-			return event.is_dir
+		return event.is_directory
 	
 	def relative_path(self, path):
+		if not os.path.isabs(path):
+			return path
 		if path.startswith(self._root):
-			return path[len(self._root):].lstrip(os.path.sep)
+			return os.path.relpath(path, self._root)
 		else:
 			logging.warn("non-relative path encountered: %s" % (path,))
 		return path
 
-	process_IN_CREATE = handler(Event.ADDED, True)
-	process_IN_DELETE = handler(Event.REMOVED, False)
-	process_IN_MOVED_FROM = handler(Event.MOVED_FROM, False)
-	process_IN_MOVED_TO = handler(Event.MOVED_TO, True)
-
-
+	def on_moved(self, event):
+		handler(Event.MOVED_FROM, False)
+		handler(Event.MOVED_TO, True, 'dest_path')
+	on_created = handler(Event.ADDED, True)
+	on_deleted = handler(Event.REMOVED, False)
 
 if __name__ == '__main__':
 	logging.basicConfig(level=logging.INFO)
