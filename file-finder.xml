@@ -81,10 +81,15 @@ The core code comes from vbabiy's gedit-openfiles - http://github.com/vbabiy/ged
 		</implementation>
 	</group>
 	<group main="finder">
-		<runner interface="http://repo.roscidus.com/python/python" path="finder">
+		<runner interface="http://repo.roscidus.com/python/python" path="finder"/>
+		<requires interface="http://repo.roscidus.com/python/python">
 			<version before="3"/>
-		</runner>
+		</requires>
 		<requires importance="recommended" interface="http://gfxmonk.net/dist/0install/watchdog.xml"/>
 		<requires importance="recommended" interface="http://gfxmonk.net/dist/0install/python-termstyle.xml"/>
+		<implementation id="sha1new=bb4770bf2f8a43ee8c642dbbb039d66b0399a974" released="2012-04-04" version="0.2">
+			<manifest-digest sha256="2f489acb878ba9cab208269a54e9e869ac748e30ae64f74593dfd6ae3412e2f6"/>
+			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.2.tgz" size="33362"/>
+		</implementation>
 	</group>
 </interface>
