@@ -3,6 +3,7 @@ import os
 import re
 import Queue as queue
 import logging
+from threading import Thread
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler, FileCreatedEvent
@@ -29,12 +30,20 @@ class TreeWatcher(object):
 		notifier = Observer()
 		notifier.name = "[inotify] notifier"
 		notifier.daemon = True
-		notifier.schedule(self._handler, self._root, recursive=True)
-		notifier.start()
+		self.notifier = notifier
 		self._ignored_dir_res = ignored_dir_regexes
 
 	def run_forever(self):
-		# initial walk
+		def spawn_watcher():
+			# watcher *should* be in its own thread, but the setup stage isn't,
+			# and takes ages on a big tree
+			self.notifier.schedule(self._handler, self._root, recursive=True)
+			self.notifier.start()
+
+		spawn_watcher_thread = Thread(target=spawn_watcher, name='[inotify] spawn_watcher')
+		spawn_watcher.daemon = True
+		spawn_watcher_thread.start()
+
 		self.add_dir(self._root)
 		self._watch_queue()
 	
@@ -64,18 +73,17 @@ class TreeWatcher(object):
 		From a give root of a tree this method will walk through every branch
 		and return a generator.
 		"""
-		if os.path.isdir(root):
-			logging.debug("walking %s" % (root,))
-			try:
-				names = os.listdir(root)
-				for name in names:
-					try:
-						if os.path.isdir(os.path.join(root, name)):
-							self._dir_queue.put((os.path.join(root, name), True))
-						else:
-							self.add_file(root, name)
-					except os.error: continue
-			except os.error: pass
+		logging.debug("walking %s" % (root,))
+		try:
+			names = os.listdir(root)
+			for name in names:
+				try:
+					if os.path.isdir(os.path.join(root, name)):
+						self._dir_queue.put((os.path.join(root, name), True))
+					else:
+						self.add_file(root, name)
+				except os.error: continue
+		except os.error: pass
 
 
 class Event(object):
