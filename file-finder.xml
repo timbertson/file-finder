@@ -40,9 +40,11 @@ The core code comes from vbabiy's gedit-openfiles - http://github.com/vbabiy/ged
 	<homepage>http://github.com/gfxmonk/file-finder</homepage>
 	<needs-terminal/>
 	<group main="finder">
-		<runner interface="http://repo.roscidus.com/python/python" path="finder">
-			<version before="3"/>
-		</runner>
+		<command name="run" path="finder">
+			<runner interface="http://repo.roscidus.com/python/python">
+				<version before="3"/>
+			</runner>
+		</command>
 		<requires importance="recommended" interface="http://gfxmonk.net/dist/0install/pyinotify.xml">
 			<version not-before="0.8.6"/>
 		</requires>
@@ -81,7 +83,9 @@ The core code comes from vbabiy's gedit-openfiles - http://github.com/vbabiy/ged
 		</implementation>
 	</group>
 	<group main="finder">
-		<runner interface="http://repo.roscidus.com/python/python" path="finder"/>
+		<command name="run" path="finder">
+			<runner interface="http://repo.roscidus.com/python/python"/>
+		</command>
 		<requires interface="http://repo.roscidus.com/python/python">
 			<version before="3"/>
 		</requires>
