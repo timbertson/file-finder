@@ -4,36 +4,17 @@
 	<name>file-finder</name>
 	<summary>find files... quickly</summary>
 	<description>
-open files based on a query
+interactive console-based file finder
 ================================================================
 
-A simple console app that indexes and allows you to search for and open files.
+A simple console app that indexes and allows you to search for and
+open files.
 
-If you have inotify for python (linux only), it'll keep track of changes while it runs (so you don't need to re-index).
-If you have the python "termstyle" package installed, you'll get fancy coloured results, too!
+Press return to open a file (by default in a new gvim tab),
+Ctrl+c to copy the path to the currently selected file.
 
-Dependencies
-------------
-
-Gedit Open Files is written in Python, so doesn't need compiling, however you will
-need the following runtime dependencies:
-
-  * Python 2.4 or later
-  * sqlite3
-
-The following python packages are optional (but make things more awesome):
-  * pyinotify
-  * termstyle
-
-Installation
-------------
-
-sudo easy_install file-finder
-
-Other
------
-
-The core code comes from vbabiy's gedit-openfiles - http://github.com/vbabiy/gedit-openfiles
+Spaces are wildcards, and you can use slashes to search directory paths
+(although you can only find files, not directories).
 
 	</description>
 	<publish xmlns="http://gfxmonk.net/dist/0install" mode="featured"/>
