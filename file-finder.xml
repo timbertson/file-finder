@@ -99,5 +99,9 @@ The core code comes from vbabiy's gedit-openfiles - http://github.com/vbabiy/ged
 			<manifest-digest sha256="99b0bd77ddf9d5288698337cea8ab2cd62f234e667a4562ee2b670847a704f50"/>
 			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.2.1.tgz" size="10713"/>
 		</implementation>
+		<implementation id="sha1new=55075f60be7afd21bc2c654b2cf7558d135b038e" released="2012-04-12" version="0.2.2">
+			<manifest-digest sha256="d4e62113a5bb9599121d512e037bb5f7809926606d54516cb929438c986c118b"/>
+			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.2.2.tgz" size="10718"/>
+		</implementation>
 	</group>
 </interface>
