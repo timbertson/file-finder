@@ -327,12 +327,8 @@ class CursesUI(object):
 	def copy_selected_path_to_clipboard(self):
 		def action(filepath):
 			try:
-				import pygtk
-				pygtk.require('2.0')
-				import gtk
-				clipboard = gtk.clipboard_get()
-				clipboard.set_text(self.opt.full_path(filepath))
-				clipboard.store()
+				import pyperclip
+				pyperclip.copy(self.opt.full_path(filepath))
 				self.flash(" ** copied **")
 			except StandardError, e:
 				logging.warn("error: %s" % (e,))

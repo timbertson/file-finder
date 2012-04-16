@@ -9,7 +9,7 @@ from setuptools import *
 
 setup(
 	name='file-finder',
-	version='0.2.2',
+	version='0.2.3',
 	description='find and open files quickly',
 	author='Tim Cuthbertson',
 	author_email='tim3d.junk+findfiles@gmail.com',
