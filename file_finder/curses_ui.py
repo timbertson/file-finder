@@ -358,7 +358,7 @@ class CursesUI(object):
 			self.move_cursor_to(0)
 		elif ch == curses.KEY_END:
 			self.move_cursor_to(len(self.query))
-		elif ascii.isctrl(ch) and ascii.ctrl(ch) in (ascii.STX, ascii.ETX, ascii.CAN): # ctrl-c, variously o_O
+		elif ascii.isctrl(ch) and ascii.ctrl(ch) in (ascii.STX, ascii.ETX, ascii.CAN, ascii.ACK): # ctrl-c, variously o_O
 			logging.debug("copy to clipboard")
 			self.copy_selected_path_to_clipboard()
 		elif ch == ascii.ESC:
