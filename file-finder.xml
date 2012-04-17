@@ -95,9 +95,9 @@ Spaces are wildcards, and you can use slashes to search directory paths
 		<requires interface="http://gfxmonk.net/dist/0install/pyperclip.xml"/>
 		<requires importance="recommended" interface="http://gfxmonk.net/dist/0install/watchdog.xml"/>
 		<requires importance="recommended" interface="http://gfxmonk.net/dist/0install/python-termstyle.xml"/>
-		<implementation id="sha1new=57d293e20a5da41bb05200e7c33b6fda9452835c" released="2012-04-16" version="0.2.3">
-			<manifest-digest sha256="66e44247bbc5b37eb2dc73ad8a33ad25d32963f7a5586fb62f2c40d11a38ab12"/>
-			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.2.3.tgz" size="10679"/>
+		<implementation id="sha1new=1e07ea0aed674ce496c6d129a4fb503e642bbd25" released="2012-04-17" version="0.2.3">
+			<manifest-digest sha256="4cf2b124fc375ea968af341fa55f875910ac0050e3922bb54a6946559ae2e5d4"/>
+			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.2.3.tgz" size="26328"/>
 		</implementation>
 	</group>
 </interface>
