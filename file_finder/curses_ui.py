@@ -339,7 +339,7 @@ class CursesUI(object):
 	def _input_iteration(self):
 		ch = self.mainscr.getch()
 		if QUITTING_TIME.isSet(): return False
-		logging.debug("input: %r (%s / %s)" % (ch, ascii.unctrl(ch), ascii.ctrl(ch)))
+		logging.debug("input: %r (%s / %s, ctrl=%s)" % (ch, ascii.unctrl(ch), ascii.ctrl(ch), ascii.isctrl(ch)))
 		if ascii.isprint(ch):
 			self.add_char(chr(ch))
 		elif ch in (ascii.BS, ascii.DEL, curses.KEY_BACKSPACE):
@@ -358,7 +358,7 @@ class CursesUI(object):
 			self.move_cursor_to(0)
 		elif ch == curses.KEY_END:
 			self.move_cursor_to(len(self.query))
-		elif ascii.isctrl(ch) and ascii.ctrl(ch) in (ascii.STX, ascii.ETX, ascii.CAN, ascii.ACK): # ctrl-c, variously o_O
+		elif ascii.isctrl(ch) and ascii.ctrl(ch) in (ascii.STX, ascii.ETX, ascii.CAN, ascii.ETX): # ctrl-c, variously o_O
 			logging.debug("copy to clipboard")
 			self.copy_selected_path_to_clipboard()
 		elif ch == ascii.ESC:
