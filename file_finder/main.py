@@ -2,6 +2,7 @@ import optparse
 import logging
 import os
 import subprocess
+import tempfile
 
 from path_filter import PathFilter
 
@@ -35,7 +36,7 @@ class Options(object):
 			logging.basicConfig(level=self.log_level)
 		else:
 			# terminal logging would break curses layout:
-			logging.basicConfig(level=self.log_level, filename='/tmp/file-finder.log', filemode='w')
+			logging.basicConfig(level=self.log_level, filename=os.path.join(tempfile.gettempdir(), 'file-finder.log'), filemode='w')
 			if not options.verbose:
 				# carelessly discard stdout and stderr
 				import sys
