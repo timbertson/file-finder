@@ -99,5 +99,9 @@ Spaces are wildcards, and you can use slashes to search directory paths
 			<manifest-digest sha256="4cf2b124fc375ea968af341fa55f875910ac0050e3922bb54a6946559ae2e5d4"/>
 			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.2.3.tgz" size="26328"/>
 		</implementation>
+		<implementation id="sha1new=d478217916761f2a7b5436a5de2da6dd9658df22" released="2012-09-10" version="0.2.5">
+			<manifest-digest sha256="781bcd557f89cf1205018d498aee33372406b7e149e0d55602044d1fadfc5eca"/>
+			<archive href="http://gfxmonk.net/dist/0install/file-finder/file-finder-0.2.5.tgz" size="26391"/>
+		</implementation>
 	</group>
 </interface>
