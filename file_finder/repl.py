@@ -1,7 +1,6 @@
 import os
 import re
 import subprocess
-import readline
 import optparse
 import threading
 
@@ -10,6 +9,11 @@ import logging
 from file_finder import FileFinder
 from highlight import Highlight
 from search import Search
+
+try:
+	import readline
+except ImportError:
+	logging.info("can't import readline")
 
 try:
 	from termstyle import green, cyan, blue, yellow, black, auto
